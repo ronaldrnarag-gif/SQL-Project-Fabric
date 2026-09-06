@@ -108,7 +108,12 @@ select top 10 a.month, a.companyid, a.productkey, a.productid,
     (e.qtysold)/
             nullif(
             (datediff(day, f.FRD, getdate()-1)/7)
-                ,0) as AvgWeeklySalesQty
+                ,0) as AvgWeeklySalesQty,
+    (a.ohqty)/nullif(
+            (e.qtysold)/
+            nullif(
+            (datediff(day, f.FRD, getdate()-1)/7)
+                ,0) ,0) as weeksOfCover
 from stockOnhand_agg a
 left join L3MSalesQty_agg b
 	on a.companyid = b.companyid and a.productkey = b.productkey
