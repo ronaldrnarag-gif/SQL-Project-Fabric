@@ -99,8 +99,9 @@ YtdSalesQty_agg
 FRD_agg
 */
 
-select top 10 a.month, a.companyid, a.productkey, a.productid, 
-    a.ohqty, a.stock_usd, a.prov_usd, b.qtysold L3Msalesqty, c.qtypurchased L3Mrcpqty, d.purchqty OpenPOqty, f.FRD,
+select top 10 a.month, a.companyid, a.productkey, a.productid,  g.productname, g.vendorgroup, g.producttype, g.itemmodelgroup, g.productlifecyclestateid, g.pgdescription, f.FRD, g.creationdate,
+    g.hir1, g.hir2, g.hir3, g.hir4, g.ltbrand, g.vendorid, g.vendorname,
+    a.ohqty, a.stock_usd, a.prov_usd, b.qtysold L3Msalesqty, c.qtypurchased L3Mrcpqty, d.purchqty OpenPOqty,
     (a.ohqty)/
             nullif(
             (a.ohqty+b.qtysold)
@@ -116,14 +117,23 @@ select top 10 a.month, a.companyid, a.productkey, a.productid,
                 ,0) ,0) as weeksOfCover
 from stockOnhand_agg a
 left join L3MSalesQty_agg b
-	on a.companyid = b.companyid and a.productkey = b.productkey
+	on upper(a.companyid) = upper(b.companyid) 
+        and a.productkey = b.productkey
 left join L3Mreception_agg c
-	on a.companyid = c.companyid and a.productkey = c.productkey
+	on upper(a.companyid) = upper(c.companyid) 
+        and a.productkey = c.productkey
 left join OpenPurchaseOrder_agg d
-	on a.companyid = d.companyid and a.productkey = d.productkey
+	on upper(a.companyid) = upper(d.companyid) 
+        and a.productkey = d.productkey
 left join YtdSalesQty_agg e
-	on a.companyid = e.companyid and a.productkey = e.productkey
+	on upper(a.companyid) = upper(e.companyid) 
+        and a.productkey = e.productkey
 left join FRD_agg f
-	on a.companyid = f.companyid and a.productkey = f.productkey
--- group by a.month, a.companyid, a.productkey, a.productid
-    
+	on upper(a.companyid) = upper(f.companyid) 
+        and a.productkey = f.productkey
+left join dimproduct g
+	on upper(a.companyid) = upper(g.companyid) 
+        and a.productkey = g.productkey
+	
+
+    -- select top 10 * from dimproduct
