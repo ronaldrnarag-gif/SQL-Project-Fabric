@@ -5,6 +5,7 @@
 
 */--------------------------------------------------------
 
+
 -- Day - 1 On hand Inventory
 ; with stockOnhand_agg as (
     select month, upper(company) as companyid, productkey, productid, 
@@ -25,10 +26,11 @@ L3MSalesQty_agg as (
 	select company companyid, productkey, productid, 
 		sum(qty) qtysold
 	from factsalesnew a
-	where date between dateadd(day,-90,getdate()-1) and getdate()-1
+	where date between dateadd(day,-90,cast(getdate()-1 as date)) and cast(getdate()-1 as date)
 		   -- and storetype NOT IN ('InterCompany', 'Warehouse')
 	group by company, productkey, productid
 	),
+
 
 ---- L3M PO Reception
 L3Mreception_agg as (
@@ -40,9 +42,10 @@ L3Mreception_agg as (
 	left join dimstore c
 		on a.locationkey = c.locationkey
 	where a.purchasetype = 'Purchase Order'
-		and date between dateadd(day,-90,getdate()-1) and getdate()-1
+		and date between dateadd(day,-90,cast(getdate()-1 as date)) and cast(getdate()-1 as date)
 	Group by upper(a.companyid), a.productkey, b.productid
 	),
+
 
 -- Open Purchase Order
 OpenPurchaseOrder_agg as (
@@ -58,6 +61,7 @@ OpenPurchaseOrder_agg as (
 	group by upper(a.companyid),  a.productkey, b.productid
 	),
 
+
 -- YTD Sales Qty
 -- ensure storetype is updated once PBI-277 is completed.
 YtdSalesQty_agg as (
@@ -71,7 +75,7 @@ YtdSalesQty_agg as (
                 THEN DATEFROMPARTS(YEAR(GETDATE()-1)-1, 2, 1)
             ELSE DATEFROMPARTS(YEAR(GETDATE()-1), 2, 1)
         END
-        AND getdate()-1
+        AND cast(getdate()-1 as date)
     --and storetype NOT IN ('InterCompany', 'Warehouse')
 	group by company, productkey, productid
 	),
@@ -80,7 +84,7 @@ YtdSalesQty_agg as (
 -- First Receipt Date (FRD Logic);
 FRD_agg as (
 	select upper(a.companyid) as companyid, a.productkey, b.productid, 
-		min(date) as FRD
+		cast(min(date) as date) as FRD
 	from factpurchase a
 	left join dimproduct b
 		on a.productkey = b.productkey and upper(a.companyid) = upper(b.companyid)
@@ -93,22 +97,30 @@ FRD_agg as (
 
 -- base query to get the final output
 BaseQuery as (
-    Select a.month, a.companyid, a.productkey, a.productid,  g.productname, g.vendorgroup, g.producttype, g.itemmodelgroup, g.productlifecyclestateid, g.pgdescription, isnull(cast(f.FRD as date),0) FRD, cast(g.creationdate as date) creationdate,
+    Select a.month, a.companyid, a.productkey, a.productid,  g.productname, g.vendorgroup, g.producttype, g.itemmodelgroup, g.productlifecyclestateid, g.pgdescription, cast(f.FRD as date) as FRD, cast(g.creationdate as date) creationdate,
         g.hir1 department, g.hir2 subdepartment, g.hir3 class, g.hir4 subclass, g.ltbrand brand, g.vendorid, g.vendorname,
         a.ohqty, a.stock_usd, a.prov_usd, b.qtysold L3Msalesqty, c.qtypurchased L3Mrcpqty, d.purchqty OpenPOqty,
         (a.ohqty)/
                 nullif(
                 (a.ohqty+b.qtysold)
                     ,0) as SellThru,
-        (e.qtysold)/
-                nullif(
-                (datediff(day, f.FRD, getdate()-1)/7)
-                    ,0) as AvgWeeklySalesQty,
+        e.qtysold /
+                NULLIF(
+                    CAST(
+                        DATEDIFF(DAY, CAST(f.FRD AS DATE), CAST(DATEADD(DAY,-1,GETDATE()) AS DATE)
+                        ) AS INT
+                    ) / 7,
+                    0
+                ) AS AvgWeeklySalesQty,
         (a.ohqty)/nullif(
                 (e.qtysold)/
-                nullif(
-                (datediff(day, f.FRD, getdate()-1)/7)
-                    ,0) ,0) as weeksOfCover
+                NULLIF(
+                    CAST(
+                        DATEDIFF(DAY, CAST(f.FRD AS DATE), CAST(DATEADD(DAY,-1,GETDATE()) AS DATE)
+                        ) AS INT
+                    ) / 7,
+                    0
+                ),0) as weeksOfCover
     from stockOnhand_agg a
     left join L3MSalesQty_agg b
         on upper(a.companyid) = upper(b.companyid) 
@@ -130,7 +142,8 @@ BaseQuery as (
             and a.productkey = g.productkey
     )
 
-select top 10 * 
+
+select top 100 * 
 from BaseQuery
 	
 /*
@@ -140,7 +153,8 @@ L3Mreception_agg
 OpenPurchaseOrder_agg
 YtdSalesQty_agg
 FRD_agg
+BaseQuery
 */
 
-select top 10 * from dimproduct
+
 
