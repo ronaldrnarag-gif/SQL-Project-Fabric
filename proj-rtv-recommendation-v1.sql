@@ -97,30 +97,59 @@ FRD_agg as (
 
 -- base query to get the final output
 BaseQuery as (
-    Select a.month, a.companyid, a.productkey, a.productid,  g.productname, g.vendorgroup, g.producttype, g.itemmodelgroup, g.productlifecyclestateid, g.pgdescription, cast(f.FRD as date) as FRD, cast(g.creationdate as date) creationdate,
+    Select a.month, a.companyid, a.productkey, a.productid,  g.productname, g.vendorgroup, g.producttype, g.itemmodelgroup, g.apntreturnablestatus returnstatus,
+        g.productlifecyclestateid, g.pgdescription, cast(f.FRD as date) as FRD, cast(g.creationdate as date) creationdate,
         g.hir1 department, g.hir2 subdepartment, g.hir3 class, g.hir4 subclass, g.ltbrand brand, g.vendorid, g.vendorname,
-        a.ohqty, a.stock_usd, a.prov_usd, b.qtysold L3Msalesqty, c.qtypurchased L3Mrcpqty, d.purchqty OpenPOqty,
-        (a.ohqty)/
+        a.ohqty, a.stock_usd, a.prov_usd, b.qtysold L3Msalesqty, e.qtysold YTDsalesqty, c.qtypurchased L3Mrcpqty, d.remainpurchphysical OpenPOqty, 
+        
+        (b.qtysold)/
                 nullif(
                 (a.ohqty+b.qtysold)
                     ,0) as SellThru,
+
         e.qtysold /
-                NULLIF(
-                    CAST(
-                        DATEDIFF(DAY, CAST(f.FRD AS DATE), CAST(DATEADD(DAY,-1,GETDATE()) AS DATE)
-                        ) AS INT
-                    ) / 7,
-                    0
-                ) AS AvgWeeklySalesQty,
+                (CASE 
+                    WHEN CAST(f.FRD AS DATE) < DATEFROMPARTS(2026, 2, 1) -- make this dynamic
+                    THEN NULLIF(
+                            DATEDIFF(
+                                DAY,
+                                DATEFROMPARTS(2026, 2, 1), -- make this dynamic
+                                CAST(DATEADD(DAY, -1, GETDATE()) AS DATE)
+                            ) / 7.00,
+                            0
+                        )
+                    ELSE NULLIF(
+                            DATEDIFF(
+                                DAY,
+                                CAST(f.FRD AS DATE),
+                                CAST(DATEADD(DAY, -1, GETDATE()) AS DATE)
+                            ) / 7.00,
+                            0
+                        )
+                END) AS AvgWeeklySalesQty, --based on ytd sales
+
         (a.ohqty)/nullif(
-                (e.qtysold)/
-                NULLIF(
-                    CAST(
-                        DATEDIFF(DAY, CAST(f.FRD AS DATE), CAST(DATEADD(DAY,-1,GETDATE()) AS DATE)
-                        ) AS INT
-                    ) / 7,
-                    0
-                ),0) as weeksOfCover
+                e.qtysold /
+                CASE 
+                    WHEN CAST(f.FRD AS DATE) < DATEFROMPARTS(2026, 2, 1) -- make this dynamic
+                    THEN NULLIF(
+                            cast(DATEDIFF(
+                                DAY,
+                                DATEFROMPARTS(2026, 2, 1), -- make this dynamic
+                                CAST(DATEADD(DAY, -1, GETDATE()) AS DATE)
+                            ) / 7.00 as DECIMAL),
+                            0
+                        )
+                    ELSE NULLIF(
+                            DATEDIFF(
+                                DAY,
+                                CAST(f.FRD AS DATE),
+                                CAST(DATEADD(DAY, -1, GETDATE()) AS DATE)
+                            ) / 7.00,
+                            0
+                        )
+                END ,0) as weeksOfCover
+
     from stockOnhand_agg a
     left join L3MSalesQty_agg b
         on upper(a.companyid) = upper(b.companyid) 
@@ -140,12 +169,18 @@ BaseQuery as (
     left join dimproduct g
         on upper(a.companyid) = upper(g.companyid) 
             and a.productkey = g.productkey
+where a.ohqty > 5
+and b.qtysold > 5
+and c.qtypurchased > 1
+and d.remainpurchphysical > 1
+and a.companyid = 'UAE'
     )
 
 
 select top 100 * 
 from BaseQuery
-	
+
+
 /*
 stockOnhand_agg
 L3MSalesQty_agg
