@@ -88,8 +88,51 @@ FRD_agg as (
 		on a.locationkey = c.locationkey
 	where a.purchasetype = 'Purchase Order'
 	Group by upper(a.companyid), a.productkey, b.productid
-	)
+	),
 
+
+-- base query to get the final output
+BaseQuery as (
+    Select a.month, a.companyid, a.productkey, a.productid,  g.productname, g.vendorgroup, g.producttype, g.itemmodelgroup, g.productlifecyclestateid, g.pgdescription, isnull(cast(f.FRD as date),0) FRD, cast(g.creationdate as date) creationdate,
+        g.hir1 department, g.hir2 subdepartment, g.hir3 class, g.hir4 subclass, g.ltbrand brand, g.vendorid, g.vendorname,
+        a.ohqty, a.stock_usd, a.prov_usd, b.qtysold L3Msalesqty, c.qtypurchased L3Mrcpqty, d.purchqty OpenPOqty,
+        (a.ohqty)/
+                nullif(
+                (a.ohqty+b.qtysold)
+                    ,0) as SellThru,
+        (e.qtysold)/
+                nullif(
+                (datediff(day, f.FRD, getdate()-1)/7)
+                    ,0) as AvgWeeklySalesQty,
+        (a.ohqty)/nullif(
+                (e.qtysold)/
+                nullif(
+                (datediff(day, f.FRD, getdate()-1)/7)
+                    ,0) ,0) as weeksOfCover
+    from stockOnhand_agg a
+    left join L3MSalesQty_agg b
+        on upper(a.companyid) = upper(b.companyid) 
+            and a.productkey = b.productkey
+    left join L3Mreception_agg c
+        on upper(a.companyid) = upper(c.companyid) 
+            and a.productkey = c.productkey
+    left join OpenPurchaseOrder_agg d
+        on upper(a.companyid) = upper(d.companyid) 
+            and a.productkey = d.productkey
+    left join YtdSalesQty_agg e
+        on upper(a.companyid) = upper(e.companyid) 
+            and a.productkey = e.productkey
+    left join FRD_agg f
+        on upper(a.companyid) = upper(f.companyid) 
+            and a.productkey = f.productkey
+    left join dimproduct g
+        on upper(a.companyid) = upper(g.companyid) 
+            and a.productkey = g.productkey
+    )
+
+select top 10 * 
+from BaseQuery
+	
 /*
 stockOnhand_agg
 L3MSalesQty_agg
@@ -99,41 +142,5 @@ YtdSalesQty_agg
 FRD_agg
 */
 
-select top 10 a.month, a.companyid, a.productkey, a.productid,  g.productname, g.vendorgroup, g.producttype, g.itemmodelgroup, g.productlifecyclestateid, g.pgdescription, f.FRD, g.creationdate,
-    g.hir1, g.hir2, g.hir3, g.hir4, g.ltbrand, g.vendorid, g.vendorname,
-    a.ohqty, a.stock_usd, a.prov_usd, b.qtysold L3Msalesqty, c.qtypurchased L3Mrcpqty, d.purchqty OpenPOqty,
-    (a.ohqty)/
-            nullif(
-            (a.ohqty+b.qtysold)
-                ,0) as SellThru,
-    (e.qtysold)/
-            nullif(
-            (datediff(day, f.FRD, getdate()-1)/7)
-                ,0) as AvgWeeklySalesQty,
-    (a.ohqty)/nullif(
-            (e.qtysold)/
-            nullif(
-            (datediff(day, f.FRD, getdate()-1)/7)
-                ,0) ,0) as weeksOfCover
-from stockOnhand_agg a
-left join L3MSalesQty_agg b
-	on upper(a.companyid) = upper(b.companyid) 
-        and a.productkey = b.productkey
-left join L3Mreception_agg c
-	on upper(a.companyid) = upper(c.companyid) 
-        and a.productkey = c.productkey
-left join OpenPurchaseOrder_agg d
-	on upper(a.companyid) = upper(d.companyid) 
-        and a.productkey = d.productkey
-left join YtdSalesQty_agg e
-	on upper(a.companyid) = upper(e.companyid) 
-        and a.productkey = e.productkey
-left join FRD_agg f
-	on upper(a.companyid) = upper(f.companyid) 
-        and a.productkey = f.productkey
-left join dimproduct g
-	on upper(a.companyid) = upper(g.companyid) 
-        and a.productkey = g.productkey
-	
+select top 10 * from dimproduct
 
-    -- select top 10 * from dimproduct
