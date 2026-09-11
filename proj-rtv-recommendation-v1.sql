@@ -23,12 +23,12 @@
 -- L3M Sales Qty 
 -- ensure storetype is updated once PBI-277 is completed.
 L3MSalesQty_agg as (
-	select company companyid, productkey, productid, 
+	select upper(company) companyid, productkey, productid, 
 		sum(qty) qtysold
 	from factsalesnew a
 	where date between dateadd(day,-90,cast(getdate()-1 as date)) and cast(getdate()-1 as date)
 		   -- and storetype NOT IN ('InterCompany', 'Warehouse')
-	group by company, productkey, productid
+	group by upper(company), productkey, productid
 	),
 
 
@@ -65,7 +65,7 @@ OpenPurchaseOrder_agg as (
 -- YTD Sales Qty
 -- ensure storetype is updated once PBI-277 is completed.
 YtdSalesQty_agg as (
-	select company companyid, productkey, productid, 
+	select upper(company) companyid, productkey, productid, 
 		sum(qty) qtysold
 	from factsalesnew 
 	WHERE
@@ -77,7 +77,7 @@ YtdSalesQty_agg as (
         END
         AND cast(getdate()-1 as date)
     --and storetype NOT IN ('InterCompany', 'Warehouse')
-	group by company, productkey, productid
+	group by upper(company), productkey, productid
 	),
 
 
@@ -101,7 +101,7 @@ BaseQuery as (
         g.productlifecyclestateid, g.pgdescription, cast(f.FRD as date) as FRD, cast(g.creationdate as date) creationdate,
         g.hir1 department, g.hir2 subdepartment, g.hir3 class, g.hir4 subclass, g.ltbrand brand, g.vendorid, g.vendorname,
         a.ohqty, a.stock_usd, a.prov_usd, b.qtysold L3Msalesqty, e.qtysold YTDsalesqty, c.qtypurchased L3Mrcpqty, d.remainpurchphysical OpenPOqty, 
-        
+
         (b.qtysold)/
                 nullif(
                 (a.ohqty+b.qtysold)
@@ -169,17 +169,40 @@ BaseQuery as (
     left join dimproduct g
         on upper(a.companyid) = upper(g.companyid) 
             and a.productkey = g.productkey
-where a.ohqty > 5
-and b.qtysold > 5
-and c.qtypurchased > 1
-and d.remainpurchphysical > 1
-and a.companyid = 'UAE'
+-- where a.ohqty > 5
+-- and b.qtysold > 5
+-- and c.qtypurchased > 1
+-- and d.remainpurchphysical > 1
     )
 
+-- select top 10 * from BaseQuery          
 
-select top 100 * 
-from BaseQuery
+select top 10 
+        case 
+            when (
+                    productlifecyclestateid <> '3' 
+                    and returnstatus = 1 
+                    and DATEDIFF(DAY,FRD,GETDATE()-1)>=90)
+                    and prov_usd <> 0
+                    and OpenPOqty <> 0
+                    and (ohqty >=5 or  stock_usd >= 200)
+                then 'Recommended'
+            when productlifecyclestateid = '3' 
+                then 'Not recommended - demo'
+            when (FRD is not null and DATEDIFF(DAY,FRD,GETDATE()-1)>=90)
+                then 'Not recommended - newness'
+            else 'Not recommended'
+        end as Recommendation
+        , a.*
+from BaseQuery a
 
+-- select distinct productlifecyclestateid, pgdescription
+-- from BaseQuery
+
+
+-- select * from dimproduct where productkey = '10774198' and UPPER(companyid) = 'UAE'
+
+select top 10 * from dimproduct
 
 /*
 stockOnhand_agg
@@ -190,6 +213,5 @@ YtdSalesQty_agg
 FRD_agg
 BaseQuery
 */
-
 
 
