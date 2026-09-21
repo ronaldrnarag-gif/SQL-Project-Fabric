@@ -47,8 +47,8 @@ WITH sales_agg AS
     LEFT JOIN dimstore ds
         ON f.warehouseid= ds.warehouseid
 
-    WHERE f.[level] <> 'L-3'
-      AND f.date >= '2024-02-01'
+    WHERE f.date >= '2024-02-01'
+        -- and f.[level] <> 'L-3'
 
     GROUP BY
         dd.fiscalperiod , f.date, dd.monthshortname , dd.fiscalweek , f.company, f.warehouseid, ds.warehousename, ds.storetype, f.productkey, f.productid, dp.productname, dp.hir1, dp.hir2, dp.hir3, dp.hir4, dp.vendorgroup,
@@ -67,14 +67,14 @@ stock_agg AS (
     SELECT
         (select DISTINCT fiscalperiod
         from dimdate 
-        where date = GETDATE()-1) as finyear,   -- year
+        where date = cast(GETDATE()-1 as date)) as finyear,   -- year
         cast(GETDATE()-1 as date) date,         -- date
         (select DISTINCT monthshortname
         from dimdate 
-        where date = GETDATE()-1) as month,     -- month
+        where date = cast(GETDATE()-1 as date)) as month,     -- month
         (select DISTINCT fiscalweek
         from dimdate 
-        where date = GETDATE()-1) as week,      -- week
+        where date = cast(GETDATE()-1 as date)) as week,      -- week
 
         fv.company, fv.warehouseid, ds.warehousename, ds.storetype,
         fv.productkey, fv.productid, dp.productname, dp.hir1 department, dp.hir2 subdepartment, dp.hir3 class, dp.hir4 subclass, dp.vendorgroup,
@@ -121,6 +121,13 @@ stock_agg AS (
 
 ---------- FINAL OUTPUT -----------
 
+
+
+select finyear, company, level, vendorgroup, 
+   sum(sales_usd) sales_usd, sum(cost_usd) cost_usd, sum(claimamount_usd) claimamount_usd, sum(margin_usd) margin_usd
+from sales_agg
+group by finyear, company, level, vendorgroup
+
 SELECT *
 from (
     SELECT * FROM sales_agg
@@ -132,3 +139,16 @@ from (
 
 --count(*) -- 9,371,809 
 
+
+
+select finyear, company, level, itemgroupname, 
+   sum(sales_usd) sales_usd, sum(cost_usd) cost_usd, sum(claimamount_usd) claimamount_usd, sum(margin_usd) margin_usd
+from factsalesnew
+where date >= '2024-02-01'
+group by finyear, company, level, itemgroupname
+
+
+select finyear, company, level, vendorgroup,
+   sum(sales_usd) sales_usd, sum(cost_usd) cost_usd, sum(claimamount_usd) claimamount_usd, sum(margin_usd) margin_usd, sum(latestoh_usd) latestoh_usd, sum(latestohprov_usd) latestohprov_usd
+from vw_mlssorig
+group by finyear, company, level, vendorgroup

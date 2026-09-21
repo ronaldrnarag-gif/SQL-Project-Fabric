@@ -21,7 +21,7 @@ CTE Flow        :
     select month, upper(company) as companyid, productkey, productid, 
         sum(total_stk_qty) as ohqty, sum(total_stk$) as stock_usd, sum(total_prov$) as prov_usd
     from fact_inventory_with_provision_aging a
-    where storetype not in ('InterCompany', 'Demo', 'Defective')
+    where storetype not in ('InterCompany', 'Demo', 'Defective','Ticketing','RTV')
     group by month, upper(company), productkey, productid
     ),
 
@@ -32,7 +32,7 @@ L3MSalesQty_agg as (
 		sum(qty) qtysold
 	from factsalesnew a
 	where date between dateadd(day,-90,cast(getdate()-1 as date)) and cast(getdate()-1 as date)
-    and storetype not in ('InterCompany', 'Demo', 'Defective')
+    and storetype not in ('InterCompany', 'Demo', 'Defective','Ticketing','RTV')
 	group by upper(company), productkey, productid
 	),
 
@@ -48,7 +48,7 @@ L3Mreception_agg as (
 		on a.locationkey = c.locationkey
 	where a.purchasetype = 'Purchase Order'
 		and date between dateadd(day,-90,cast(getdate()-1 as date)) and cast(getdate()-1 as date)
-    and c.storetype not in ('InterCompany', 'Demo', 'Defective')
+    and c.storetype not in ('InterCompany', 'Demo', 'Defective','Ticketing','RTV')
 	Group by upper(a.companyid), a.productkey, b.productid
 	),
 
@@ -69,7 +69,7 @@ OpenPurchaseOrder_agg as (
 		and ltreceivedstatus <> 2       -- 0 Not Received, 1 Partially Received, 2 Fully Received 
 		and purchasetype = 3            -- 0 Journal, 3 Purchase Order, 4 Returned order
 		-- and intercompanyorder = 0    -- 0 interco order no, 1 interco order yes
-        and c.storetype not in ('InterCompany', 'Demo', 'Defective')
+        and c.storetype not in ('InterCompany', 'Demo', 'Defective','Ticketing','RTV')
 	group by upper(a.companyid),  a.productkey, b.productid
 	),
 
@@ -87,7 +87,7 @@ YtdSalesQty_agg as (
             ELSE DATEFROMPARTS(YEAR(GETDATE()-1), 2, 1)
         END
         AND cast(getdate()-1 as date)
-    and storetype not in ('InterCompany', 'Demo', 'Defective')
+    and storetype not in ('InterCompany', 'Demo', 'Defective','Ticketing','RTV')
 	group by upper(company), productkey, productid
 	),
 
@@ -117,7 +117,7 @@ BaseQuery as (
                 (a.ohqty+b.qtysold)
                     ,0) as SellThru,   
 
-        -- AvgWeeklySalesQty
+        -- AvgWeeklySalesQty -- to be updated into L3M instead
         e.qtysold /
                 (CASE 
                     WHEN CAST(f.FRD AS DATE) < DATEFROMPARTS(2026, 2, 1) -- make this dynamic
@@ -188,24 +188,46 @@ BaseQuery as (
 
 recommendation_agg as (
     select 
-            case 
-                when (
+            CASE 
+                WHEN (
                         productlifecyclestateid <> '3'                  -- not a demo
+                        -- AND returnstatus = 'Y'                       -- with return clause
                         AND DATEDIFF(DAY,LRD,GETDATE()-1)>=90           -- not new
                         AND prov_usd <> 0                               -- not a moving stock
                         AND OpenPOqty  = 0                              -- no new order
                         AND (ohqty >=5 or  stock_usd >= 200)            -- qty/amount is material
+                        AND weeksOfCover <= 12                          -- WOC
                             )
-                    then 'YES'
-                    else 'NO'
-            end as recommendation
+                        THEN 'Yes - no action'
+                WHEN (
+                        productlifecyclestateid <> '3'                  -- not a demo
+                        -- AND returnstatus = 'Y'                       -- with return clause
+                        AND DATEDIFF(DAY,LRD,GETDATE()-1)>=90           -- not new
+                        AND prov_usd <> 0                               -- not a moving stock
+                        AND OpenPOqty  = 0                              -- no new order
+                        AND (ohqty >=5 or  stock_usd >= 200)            -- qty/amount is material
+                        AND weeksOfCover <= 25                          -- WOC
+                            )
+                        THEN 'Yes - for Promo'
+                WHEN (
+                        productlifecyclestateid <> '3'                  -- not a demo
+                        -- AND returnstatus = 'Y'                       -- with return clause
+                        AND DATEDIFF(DAY,LRD,GETDATE()-1)>=90           -- not new
+                        AND prov_usd <> 0                               -- not a moving stock
+                        AND OpenPOqty  = 0                              -- no new order
+                        AND (ohqty >=5 or  stock_usd >= 200)            -- qty/amount is material
+                        AND weeksOfCover > 25                           -- WOC
+                            )
+                        THEN 'Yes - for Rtv'
+                ELSE 'NO'
+            END as recommendation
             , a.*
     from BaseQuery a
 )
 
 -- This script will be part of the SP to update 'fact_inventory_with_provision_aging' table on daily basis
 
--- SELECT  *
+-- SELECT  top 10 *
 -- from (
 --     select 
 --         case 
@@ -213,11 +235,14 @@ recommendation_agg as (
 --             when a.storetype = 'Defective' then '2-NR Defective'
 --             when a.storetype = 'InterCompany' then '3-NR Intercompany'
 --             when DATEDIFF(DAY,LRD,GETDATE()-1)<=90 then '4-NR Newness'
---             when b.recommendation='YES' then '5-Recommended'
+--             when b.recommendation='Yes - no action' then '5-Recommended, no action'
+--             when b.recommendation='Yes - for Promo' then '5-Recommended for promo'
+--             when b.recommendation='Yes - for Rtv' then '5-Recommended for rtv'
 --             when b.recommendation='NO' then '5.1-NR'
 --             else '6-NR Others'
 --         end isRecommended,
 --         b.recommendation,
+
 --         a.*
 --     from fact_inventory_with_provision_aging a
 --     LEFT JOIN recommendation_agg b
@@ -228,10 +253,9 @@ recommendation_agg as (
 --             and a.productkey=dp.productkey
 --     where dp.vendorgroup in ('I','N')
 --     and dp.hir1 <> 'services'
---     and a.productid = '1114135'
---     and company = 'QAT'
+--     -- and a.productid = '1114135'
+--     -- and company = 'QAT'
 --             ) t
-
 
 SELECT  company, isRecommended, 
     SUM(total_stk$)total_stk, sum(total_prov$)total_prov
@@ -242,10 +266,15 @@ from (
             when a.storetype = 'Defective' then '2-NR Defective'
             when a.storetype = 'InterCompany' then '3-NR Intercompany'
             when DATEDIFF(DAY,LRD,GETDATE()-1)<=90 then '4-NR Newness'
-            when b.recommendation='YES' then '5-Recommended'
+            when b.recommendation='Yes - no action' then '5-Recommended, no action'
+            when b.recommendation='Yes - for Promo' then '5-Recommended for promo'
+            when b.recommendation='Yes - for Rtv' then '5-Recommended for rtv'
+            when b.recommendation='NO' then '5.1-NR'
             else '6-NR Others'
         end isRecommended,
         b.recommendation,
+        b.AvgWeeklySalesQty,
+        b.weeksOfCover,
         a.*
     from fact_inventory_with_provision_aging a
     LEFT JOIN recommendation_agg b

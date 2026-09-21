@@ -5,9 +5,9 @@ Purpose         :   contain logic related to Rtv Recommendation
 Created         :   ronaldn/20260914
 CTE Flow        : 
 
-                -- stockOnhand_agg
-                -- L3MSalesQty_agg
-                -- L3Mreception_agg
+                -- stockOnhand_agg          -- excluding interco, demo, defective
+                -- L3MSalesQty_agg          -- excluding interco, demo, defective
+                -- L3Mreception_agg         -- excluding interco, demo, defective
                 -- OpenPurchaseOrder_agg
                 -- YtdSalesQty_agg
                 -- FRD_agg
@@ -56,21 +56,22 @@ L3Mreception_agg as (
 -- Open Purchase Order
 OpenPurchaseOrder_agg as (
 	select upper(a.companyid) companyid,  a.productkey, b.productid,
-		sum(purchqty)purchqty , sum(lineamount) lineamount, sum(orderedqty)orderedqty, sum(remainpurchphysical)remainpurchphysical
+		sum(purchqty)purchqty , sum(lineamount) lineamount, sum(orderedqty)orderedqty, isnull(sum(remainpurchphysical),0) remainpurchphysical
 	from factpurchaseorder a
 	left join dimproduct b
 		on a.productkey=b.productkey and upper(a.companyid)=upper(b.companyid)
     left join dimstore c
         on a.storekey = c.locationkey
 	where 
-        purchstatus = 1 -- 1 Open Order, 2 Received, 3 Invoiced, 4 Cancelled
-		and ltreceivedstatus <> 2 -- 0 Not Received, 1 Partially Received, 2 Fully Received 
-		and purchasetype = 3 -- 0 Journal, 3 Purchase Order, 4 Returned order
-		and intercompanyorder = 0 -- 0 interco order no, 1 interco order yes
+        DATEDIFF(DAY,podate,cast(GETDATE()-1 as date)) <= 45
+        and approvalstatus <> 30        -- 30 Approved, 40 Confirmed, 50 Finalized
+        and purchstatus = 1             -- 1 Open Order, 2 Received, 3 Invoiced, 4 Cancelled
+		and ltreceivedstatus <> 2       -- 0 Not Received, 1 Partially Received, 2 Fully Received 
+		and purchasetype = 3            -- 0 Journal, 3 Purchase Order, 4 Returned order
+		-- and intercompanyorder = 0    -- 0 interco order no, 1 interco order yes
         and c.storetype not in ('InterCompany', 'Demo', 'Defective')
 	group by upper(a.companyid),  a.productkey, b.productid
 	),
-
 
 -- YTD Sales Qty
 -- ensure storetype is updated once PBI-277 is completed.
@@ -90,7 +91,6 @@ YtdSalesQty_agg as (
 	group by upper(company), productkey, productid
 	),
 
-
 -- First Receipt Date (FRD Logic);
 FRD_agg as (
 	select upper(a.companyid) as companyid, a.productkey, b.productid, 
@@ -104,19 +104,20 @@ FRD_agg as (
 	Group by upper(a.companyid), a.productkey, b.productid
 	),
 
-
 -- base query to get the final output
 BaseQuery as (
     Select a.month, a.companyid, a.productkey, a.productid,  g.productname, g.vendorgroup, g.producttype, g.itemmodelgroup, g.apntreturnablestatus returnstatus,
         g.productlifecyclestateid, g.pgdescription, cast(f.FRD as date) as FRD, cast(h.lrdentity as date) as LRD,cast(g.creationdate as date) creationdate,
         g.hir1 department, g.hir2 subdepartment, g.hir3 class, g.hir4 subclass, g.ltbrand brand, g.vendorid, g.vendorname,
-        a.ohqty, a.stock_usd, a.prov_usd, b.qtysold L3Msalesqty, e.qtysold YTDsalesqty, c.qtypurchased L3Mrcpqty, d.remainpurchphysical OpenPOqty, 
+        a.ohqty, a.stock_usd, a.prov_usd, b.qtysold L3Msalesqty, e.qtysold YTDsalesqty, c.qtypurchased L3Mrcpqty, isnull(d.remainpurchphysical,0) OpenPOqty, 
 
+        -- sell thru
         (b.qtysold)/
                 nullif(
                 (a.ohqty+b.qtysold)
-                    ,0) as SellThru,
+                    ,0) as SellThru,   
 
+        -- AvgWeeklySalesQty
         e.qtysold /
                 (CASE 
                     WHEN CAST(f.FRD AS DATE) < DATEFROMPARTS(2026, 2, 1) -- make this dynamic
@@ -138,6 +139,7 @@ BaseQuery as (
                         )
                 END) AS AvgWeeklySalesQty, --based on ytd sales
 
+        -- weeksOfCover
         (a.ohqty)/nullif(
                 e.qtysold /
                 CASE 
@@ -188,12 +190,12 @@ recommendation_agg as (
     select 
             case 
                 when (
-                        productlifecyclestateid <> '3' -- non demo
-                        -- and returnstatus = 1 /* To be reinstated once correct flag is available. */
-                        and DATEDIFF(DAY,LRD,GETDATE()-1)>=90) -- not newness
-                        and prov_usd <> 0 -- non moving
-                        and OpenPOqty <> 0 -- no new order
-                        and (ohqty >=5 or  stock_usd >= 200) -- amount is material
+                        productlifecyclestateid <> '3'                  -- not a demo
+                        AND DATEDIFF(DAY,LRD,GETDATE()-1)>=90           -- not new
+                        AND prov_usd <> 0                               -- not a moving stock
+                        AND OpenPOqty  = 0                              -- no new order
+                        AND (ohqty >=5 or  stock_usd >= 200)            -- qty/amount is material
+                            )
                     then 'YES'
                     else 'NO'
             end as recommendation
@@ -202,27 +204,63 @@ recommendation_agg as (
 )
 
 -- This script will be part of the SP to update 'fact_inventory_with_provision_aging' table on daily basis
-SELECT *
+
+-- SELECT  *
+-- from (
+--     select 
+--         case 
+--             when (a.popgradeno = '3' and a.storetype = 'Demo') then '1-NR Demo' 
+--             when a.storetype = 'Defective' then '2-NR Defective'
+--             when a.storetype = 'InterCompany' then '3-NR Intercompany'
+--             when DATEDIFF(DAY,LRD,GETDATE()-1)<=90 then '4-NR Newness'
+--             when b.recommendation='YES' then '5-Recommended'
+--             when b.recommendation='NO' then '5.1-NR'
+--             else '6-NR Others'
+--         end isRecommended,
+--         b.recommendation,
+--         a.*
+--     from fact_inventory_with_provision_aging a
+--     LEFT JOIN recommendation_agg b
+--         on a.company=b.companyid
+--         and a.productkey=b.productkey
+--     LEFT JOIN dimproduct dp
+--         ON upper(a.company)=upper(dp.companyid)
+--             and a.productkey=dp.productkey
+--     where dp.vendorgroup in ('I','N')
+--     and dp.hir1 <> 'services'
+--     and a.productid = '1114135'
+--     and company = 'QAT'
+--             ) t
+
+
+SELECT  company, isRecommended, 
+    SUM(total_stk$)total_stk, sum(total_prov$)total_prov
 from (
-select 
-    case 
-        when (a.popgradeno = '3' and a.storetype = 'Demo') then '1-NR Demo' 
-        when a.storetype = 'Defective' then '2-NR Defective'
-        when a.storetype = 'InterCompany' then '3-NR Intercompany'
-        when DATEDIFF(DAY,LRD,GETDATE()-1)<=90 then '4-NR Newness'
-        when b.recommendation='YES' then '5-Recommended'
-        else '6-NR Others'
-    end isRecommended,
-    b.recommendation,
-    a.*
-from fact_inventory_with_provision_aging a
-LEFT JOIN recommendation_agg b
-    on a.company=b.companyid
-    and a.productkey=b.productkey
-        ) t
-where isRecommended = '6-NR Others'
+    select 
+        case 
+            when (a.popgradeno = '3' and a.storetype = 'Demo') then '1-NR Demo' 
+            when a.storetype = 'Defective' then '2-NR Defective'
+            when a.storetype = 'InterCompany' then '3-NR Intercompany'
+            when DATEDIFF(DAY,LRD,GETDATE()-1)<=90 then '4-NR Newness'
+            when b.recommendation='YES' then '5-Recommended'
+            else '6-NR Others'
+        end isRecommended,
+        b.recommendation,
+        a.*
+    from fact_inventory_with_provision_aging a
+    LEFT JOIN recommendation_agg b
+        on a.company=b.companyid
+        and a.productkey=b.productkey
+    LEFT JOIN dimproduct dp
+        ON upper(a.company)=upper(dp.companyid)
+            and a.productkey=dp.productkey
+    where dp.vendorgroup in ('I','N')
+    and dp.hir1 <> 'services'
+            ) t
+GROUP BY company, isRecommended
 
 
+--1114135
 /*
 
 */
