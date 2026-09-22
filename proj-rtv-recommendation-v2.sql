@@ -106,7 +106,7 @@ FRD_agg as (
 
 -- base query to get the final output
 BaseQuery as (
-    Select a.month, a.companyid, a.productkey, a.productid,  g.productname, g.vendorgroup, g.producttype, g.itemmodelgroup, g.apntreturnablestatus returnstatus,
+    Select a.month, a.companyid, a.productkey, a.productid,  g.productname, g.vendorgroup, g.producttype, g.itemmodelgroup, g.returnstatus returnstatus,
         g.productlifecyclestateid, g.pgdescription, cast(f.FRD as date) as FRD, cast(h.lrdentity as date) as LRD,cast(g.creationdate as date) creationdate,
         g.hir1 department, g.hir2 subdepartment, g.hir3 class, g.hir4 subclass, g.ltbrand brand, g.vendorid, g.vendorname,
         a.ohqty, a.stock_usd, a.prov_usd, b.qtysold L3Msalesqty, e.qtysold YTDsalesqty, c.qtypurchased L3Mrcpqty, isnull(d.remainpurchphysical,0) OpenPOqty, 
@@ -191,7 +191,7 @@ recommendation_agg as (
             CASE 
                 WHEN (
                         productlifecyclestateid <> '3'                  -- not a demo
-                        -- AND returnstatus = 'Y'                       -- with return clause
+                        AND returnstatus = 1                            -- with return clause
                         AND DATEDIFF(DAY,LRD,GETDATE()-1)>=90           -- not new
                         AND prov_usd <> 0                               -- not a moving stock
                         AND OpenPOqty  = 0                              -- no new order
@@ -201,7 +201,7 @@ recommendation_agg as (
                         THEN 'Yes - no action'
                 WHEN (
                         productlifecyclestateid <> '3'                  -- not a demo
-                        -- AND returnstatus = 'Y'                       -- with return clause
+                        AND returnstatus = 1                            -- with return clause
                         AND DATEDIFF(DAY,LRD,GETDATE()-1)>=90           -- not new
                         AND prov_usd <> 0                               -- not a moving stock
                         AND OpenPOqty  = 0                              -- no new order
@@ -211,7 +211,7 @@ recommendation_agg as (
                         THEN 'Yes - for Promo'
                 WHEN (
                         productlifecyclestateid <> '3'                  -- not a demo
-                        -- AND returnstatus = 'Y'                       -- with return clause
+                        AND returnstatus = 1                            -- with return clause
                         AND DATEDIFF(DAY,LRD,GETDATE()-1)>=90           -- not new
                         AND prov_usd <> 0                               -- not a moving stock
                         AND OpenPOqty  = 0                              -- no new order
