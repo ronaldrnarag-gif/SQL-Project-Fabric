@@ -266,13 +266,12 @@ from (
             when a.storetype = 'Defective' then '2-NR Defective'
             when a.storetype = 'InterCompany' then '3-NR Intercompany'
             when DATEDIFF(DAY,LRD,GETDATE()-1)<=90 then '4-NR Newness'
-            when b.recommendation='Yes - no action' then '5-Recommended, no action'
-            when b.recommendation='Yes - for Promo' then '5-Recommended for promo'
-            when b.recommendation='Yes - for Rtv' then '5-Recommended for rtv'
-            when b.recommendation='NO' then '5.1-NR'
+            when b.recommendation='Yes - no action' then '5.1-Recommended, No action'
+            when b.recommendation='Yes - for Promo' then '5.2-Recommended, Promotion'
+            when b.recommendation='Yes - for Rtv' then '5.3-Recommended, RTV'
+            when b.recommendation='NO' then '6-NR Others'
             else '6-NR Others'
         end isRecommended,
-        b.recommendation,
         b.AvgWeeklySalesQty,
         b.weeksOfCover,
         a.*
