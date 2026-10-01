@@ -1,0 +1,57 @@
+use Lakehouse_Presentation
+
+
+select year(a.date) year, month(a.date) month, a.companyid, d.warehouseid, d.storetype, b.hir1,b.vendorgroup,b.producttype,b.itemmodelgroup,
+sum(a.qty) qtysold, 
+sum(a.netsales * c.exchangeratenew) netsales, 
+sum(a.cost * c.exchangeratenew) cost, 
+    SUM(a.cost_it * c.exchangeratenew) cost_it, 
+    SUM(case 
+    when (a.cost_it = 0 or a.cost_it is null
+        and b.vendorgroup in ('I','N'))
+    then a.cost * c.exchangeratenew
+    when (a.cost_it = 0 or a.cost_it is null
+    and b.vendorgroup in ('C','H'))
+    then -a.cost * c.exchangeratenew
+        else a.cost_it * c.exchangeratenew
+    end) costreco,
+    sum(a.ltamountclaimed * c.exchangeratenew) claim,
+    sum(a.ltclaimamount * c.exchangeratenew) claim1
+from factsales a
+left join dimproduct b
+    on UPPER(a.companyid) = upper(b.companyid)
+    and a.productkey=b.productkey
+left join [AzadeaWarehouse].[dbo].[dimexchangeratedwh] c
+    on UPPER(a.companyid) = upper(c.companyid)
+left join dimstore d
+    on a.locationkey=d.locationkey
+where a.date between '2026-02-01' and '2026-08-31' 
+    and a.cost is null
+group by year(a.date), month(a.date), a.companyid, d.warehouseid,  d.storetype, b.hir1,b.vendorgroup,b.producttype,b.itemmodelgroup
+
+
+
+select top 10 b.vendorgroup, b.productid, a.*
+from factsales a
+left join dimproduct b
+    on UPPER(a.companyid) = upper(b.companyid)
+    and a.productkey=b.productkey
+left join [AzadeaWarehouse].[dbo].[dimexchangeratedwh] c
+    on UPPER(a.companyid) = upper(c.companyid)
+left join dimstore d
+    on a.locationkey=d.locationkey
+where a.date between '2026-02-01' and '2026-08-31' 
+    and a.cost is null
+    and a.companyid = 'uae'
+    and b.vendorgroup = 'C'
+
+use Lakehouse_Curated
+
+select top 10 * 
+from [Lakehouse_Curated].[dbo].[custinvoicetrans]
+where dataareaid = 'uae'
+    and itemid = '1144977'
+
+
+select top 10 * from dimproduct
+

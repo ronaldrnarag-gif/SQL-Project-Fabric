@@ -51,7 +51,7 @@ select top 10 * from taxtrans
     )
 
 -- select top 10 * from price_agg 
-
+             
 SELECT top 100 a.productid, b.price, a.basesalesprice, 
     a.vat/a.sales taxrate,
     a.*
