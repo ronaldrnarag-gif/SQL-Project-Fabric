@@ -166,6 +166,7 @@ LEFT JOIN DIMPRODUCT_DEDUP dp
 LEFT JOIN DIMDATE_MONTH dd
        ON dd.fiscalperiod = f.finyear
       AND dd.monthshortname = UPPER(f.month)
+
 ;
 
 
