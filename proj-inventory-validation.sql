@@ -8,8 +8,8 @@
 ---------------------------------------------------------------------------------------------------------------------------------------
 
 declare @finyear as varchar(10)         = '2026-27'
-declare @monthperiod as varchar(10)     = 'Oct'
-declare @dateperiod as date             = '2026-10-06'
+declare @monthperiod as varchar(10)     = 'Sep'
+declare @dateperiod as date             = '2026-09-30'
 
 -- FACTINVENTORY
 ; with factinventory_agg as (
@@ -72,16 +72,22 @@ from (
 
 
 -- -- granular
--- select top 10 *, (qty_FI-qty_SCR) qty_var, (costusd_FI-costusd_SCR) costusd_var
+-- select *, (qty_FI-qty_SCR) qty_var, (costusd_FI-costusd_SCR) costusd_var
 -- from (
---     select *, 
+--     select companyid,  warehouseid,  vendorid, itemgroupid,  
+--          department,  subdepartment,  class,  subclass, 
+--         brand,  productid,
+--         sum(netqty) netqty, sum(netcost) netcost, sum(netcost_usd) netcost_usd, 
 --         sum(case when tablesource = 'factinventory' then netqty else 0 end) qty_FI,
 --         sum(case when tablesource = 'factinventory' then netcost_usd else 0 end) costusd_FI,
 --         sum(case when tablesource = 'factscr' then netqty else 0 end) qty_SCR,
 --         sum(case when tablesource = 'factscr' then netcost_usd else 0 end) costusd_SCR
 --     from base_agg
+--     group by companyid,  warehouseid,  vendorid, itemgroupid,  
+--          department,  subdepartment,  class,  subclass, 
+--         brand,  productid
 -- ) t
-
+-- where companyid = 'QAT'
 ;
 
 
