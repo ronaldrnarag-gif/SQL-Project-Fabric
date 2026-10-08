@@ -60,36 +60,39 @@ base_agg as (
     select * from factscr_agg
 )
 
--- high level
-select *, (qty_FI-qty_SCR) qty_var, (costusd_FI-costusd_SCR) costusd_var
-from (
-    select companyid, warehouseid, vendorid, itemgroupid, 
-        sum(case when tablesource = 'factinventory' then netqty else 0 end) qty_FI,
-        sum(case when tablesource = 'factinventory' then netcost_usd else 0 end) costusd_FI,
-        sum(case when tablesource = 'factscr' then netqty else 0 end) qty_SCR,
-        sum(case when tablesource = 'factscr' then netcost_usd else 0 end) costusd_SCR
-    from base_agg
-    group by companyid, warehouseid, vendorid, itemgroupid
-) t
-
-
--- -- granular
+-- -- high level
 -- select *, (qty_FI-qty_SCR) qty_var, (costusd_FI-costusd_SCR) costusd_var
 -- from (
---     select companyid,  warehouseid,  vendorid, itemgroupid,  
---          department,  subdepartment,  class,  subclass, 
---         brand,  productid,
---         sum(netqty) netqty, sum(netcost) netcost, sum(netcost_usd) netcost_usd, 
+--     select companyid, warehouseid, vendorid, itemgroupid, 
 --         sum(case when tablesource = 'factinventory' then netqty else 0 end) qty_FI,
 --         sum(case when tablesource = 'factinventory' then netcost_usd else 0 end) costusd_FI,
 --         sum(case when tablesource = 'factscr' then netqty else 0 end) qty_SCR,
 --         sum(case when tablesource = 'factscr' then netcost_usd else 0 end) costusd_SCR
 --     from base_agg
---     group by companyid,  warehouseid,  vendorid, itemgroupid,  
---          department,  subdepartment,  class,  subclass, 
---         brand,  productid
+--     group by companyid, warehouseid, vendorid, itemgroupid
 -- ) t
--- where companyid = 'QAT'
+
+
+-- granular
+select *, (qty_FI-qty_SCR) qty_var, (costusd_FI-costusd_SCR) costusd_var
+from (
+    select companyid,  warehouseid,  vendorid, itemgroupid,  
+         department,  subdepartment,  class,  subclass, 
+        brand,  productid,
+        sum(netqty) netqty, sum(netcost) netcost, sum(netcost_usd) netcost_usd, 
+        sum(case when tablesource = 'factinventory' then netqty else 0 end) qty_FI,
+        sum(case when tablesource = 'factinventory' then netcost_usd else 0 end) costusd_FI,
+        sum(case when tablesource = 'factscr' then netqty else 0 end) qty_SCR,
+        sum(case when tablesource = 'factscr' then netcost_usd else 0 end) costusd_SCR
+    from base_agg
+    group by companyid,  warehouseid,  vendorid, itemgroupid,  
+         department,  subdepartment,  class,  subclass, 
+        brand,  productid
+) t
+where companyid = 'QAT'
+and abs(qty_FI-qty_SCR) > 0
+
+
 ;
 
 
