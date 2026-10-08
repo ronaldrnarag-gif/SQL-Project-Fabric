@@ -1,5 +1,5 @@
 
--- use AzadeaWarehouse
+use AzadeaWarehouse
 -- use Lakehouse_Presentation
 -- use Lakehouse_Curated
 
@@ -12,7 +12,7 @@ group by sourcemovement
 -- sales validation
 select cast(date as date) date, format(count(*),'#,###') totalrecords
 from factsalesnew
-where date >= '2026-09-01'
+where date >= '2026-10-01'
 group by cast(date as date) order by 1
 
 -- inventory validation 
@@ -23,3 +23,28 @@ and itemgroupname in ('NORMAL PURCHASE','PURCHASE FOREIGN')
 and department <> 'SERVICES'
 Group by finyear, month
 order by 1,2
+
+
+
+-- itemgroup mismatch between inventtrans and inventtrans_origin
+-- if the statuses has a gap this will result to also a gap between factinventory and factscr
+
+; with mismatch_agg as (
+        select * from (
+        select a.datephysical, a.inventtransorigin, a.dataareaid, a.itemid, 
+                a.ltitemgroupid ltitemgroupid_inventtrans, b.ltitemgroupid ltitemgroupid_inventtransorigin,
+                sum(qty) transqty
+        from inventtrans a
+        left join inventtransorigin b
+                on a.itemid=b.itemid
+                and a.dataareaid=b.dataareaid
+                and a.inventtransorigin = b.recid
+        where upper(a.dataareaid) not in ('EGP','KWT','JOR')
+        group by a.datephysical, a.inventtransorigin, a.dataareaid, a.itemid, 
+                a.ltitemgroupid , b.ltitemgroupid 
+                        ) t
+        where ltitemgroupid_inventtrans <> ltitemgroupid_inventtransorigin
+        )
+select *
+from mismatch_agg a
+order by datephysical desc
