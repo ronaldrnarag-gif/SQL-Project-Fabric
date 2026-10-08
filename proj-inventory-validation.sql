@@ -10,8 +10,8 @@ use AzadeaWarehouse
 
 -- update all variables
 declare @finyear as varchar(10)         = '2026-27'
-declare @monthperiod as varchar(10)     = 'Jul'
-declare @dateperiod as date             = '2026-07-31'
+declare @monthperiod as varchar(10)     = 'Jun'
+declare @dateperiod as date             = '2026-06-30'
 
 -- FACTINVENTORY
 ; with factinventory_agg as (
