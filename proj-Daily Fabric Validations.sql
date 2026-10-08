@@ -3,23 +3,27 @@ use AzadeaWarehouse
 -- use Lakehouse_Presentation
 -- use Lakehouse_Curated
 
+
+
 -- This gives latest date to check the other dates against
 declare @latestdate as date = cast(getdate()-1 as date)
-select @latestdate as [Day-1 Date]
+select @latestdate as [Day-1]
 
 -- check if all fact tables are updated with the latest date
-select sourcemovement, cast(max(date) as date) maxdate
+select sourcemovement, cast(max(date) as date) latestupdate
 from factinventory
 group by sourcemovement
 
 -- sales validation
-select cast(date as date) date, format(count(*),'#,###') totalrecords
+select cast(date as date) [date of sales], format(count(*),'#,###') totalrecords
 from factsalesnew
-where date >= '2026-10-01'
+where date >= DATEADD(day,1,eomonth(DATEADD(MONTH,-1,getdate()-1)))
 group by cast(date as date) order by 1
 
 -- inventory validation 
-select finyear, month, sum(total_stk_usd)total_stk_usd, sum(total_prov_usd)total_prov_usd
+select finyear, month, 
+    format(sum(total_stk_usd), '#,###') total_stk_usd, 
+    format(sum(total_prov_usd), '#,###') total_prov_usd
 from fact_inventory_historical
 where finyear = '2026-27'
 and itemgroupname in ('NORMAL PURCHASE','PURCHASE FOREIGN')
