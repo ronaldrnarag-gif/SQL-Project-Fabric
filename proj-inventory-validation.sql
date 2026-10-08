@@ -1,5 +1,6 @@
 
 
+use AzadeaWarehouse
 
 -- select top 10 * from factinventory
 -- select top 10 * from factscrdwh
@@ -7,9 +8,10 @@
 
 ---------------------------------------------------------------------------------------------------------------------------------------
 
+-- update all variables
 declare @finyear as varchar(10)         = '2026-27'
-declare @monthperiod as varchar(10)     = 'Sep'
-declare @dateperiod as date             = '2026-09-30'
+declare @monthperiod as varchar(10)     = 'Jul'
+declare @dateperiod as date             = '2026-07-31'
 
 -- FACTINVENTORY
 ; with factinventory_agg as (
