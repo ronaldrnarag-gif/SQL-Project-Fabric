@@ -3,9 +3,12 @@ use AzadeaWarehouse
 -- use Lakehouse_Presentation
 -- use Lakehouse_Curated
 
+-- This gives latest date to check the other dates against
+declare @latestdate as date = cast(getdate()-1 as date)
+select @latestdate as [Day-1 Date]
 
 -- check if all fact tables are updated with the latest date
-select sourcemovement, max(date) maxdate
+select sourcemovement, cast(max(date) as date) maxdate
 from factinventory
 group by sourcemovement
 
@@ -24,7 +27,15 @@ and department <> 'SERVICES'
 Group by finyear, month
 order by 1,2
 
+-- check whether SCR got updated for MTD 
+select finyear, month, 
+    format(count(*), '#,###') count_totalrecords
+from factscrdwh
+where finyear = '2026-27'
+group by finyear, [month]
+order by 1, 2
 
+------ NON CRITICAL CHECKS -----------------
 
 -- itemgroup mismatch between inventtrans and inventtrans_origin
 -- if the statuses has a gap this will result to also a gap between factinventory and factscr
