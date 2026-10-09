@@ -1,9 +1,6 @@
 
 
-
 use AzadeaWarehouse
--- use Lakehouse_Presentation
--- use Lakehouse_Curated
 
 -- This gives latest date to check the other dates against
 declare @latestdate as date = cast(getdate()-1 as date)
@@ -47,15 +44,20 @@ where finyear = '2026-27'
 group by finyear, [month]
 order by 1, 2
 
+
+
+
 ------ NON CRITICAL CHECKS -----------------
 
+use Lakehouse_Curated
+
 -- itemgroup mismatch between inventtrans and inventtrans_origin
--- if the statuses has a gap this will result to also a gap between factinventory and factscr
+
 
 ; with mismatch_agg as (
         select * from (
         select a.datephysical, a.inventtransorigin, a.dataareaid, a.itemid, 
-                a.ltitemgroupid ltitemgroupid_inventtrans, b.ltitemgroupid ltitemgroupid_inventtransorigin,
+                a.ltitemgroupid ltitemgroupid_inventtrans, b.ltitemgroupid ltitemgroupid_inventtransorigin, a.apntprimaryvendorid,
                 sum(qty) transqty
         from inventtrans a
         left join inventtransorigin b
@@ -64,17 +66,10 @@ order by 1, 2
                 and a.inventtransorigin = b.recid
         where upper(a.dataareaid) not in ('EGP','KWT','JOR')
         group by a.datephysical, a.inventtransorigin, a.dataareaid, a.itemid, 
-                a.ltitemgroupid , b.ltitemgroupid 
+                a.ltitemgroupid , b.ltitemgroupid , a.apntprimaryvendorid
                         ) t
         where ltitemgroupid_inventtrans <> ltitemgroupid_inventtransorigin
         )
 select *
 from mismatch_agg a
 order by datephysical desc
-
-
-use Lakehouse_Curated
-
-select count(*) from inventtrans --67,818,815
-select count(*) from inventtransorigin -- 64,700,640
-
