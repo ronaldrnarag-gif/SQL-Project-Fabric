@@ -4,23 +4,21 @@ declare @year int = 2026
 declare @monthno int = 9
 declare @monthperiod VARCHAR(10) = 'Sep'
  
-; with factsales_agg as (
+; with factsalesnew_agg as (
     select (case when month(a.date) = 8 then 'Aug' when month(a.date) = 9 then 'Sep' else '' end) month, 
-        a.companyid, c.warehouseid, a.apntprimaryvendorid_it vendorid, a.ltitemgroupid_it itemgroupid,   
-        sum(a.qty) qty,sum(a.netsales) netsales, sum(a.cost) cost, sum(a.cost_it) cost_tr,
+        a.company companyid, a.warehouseid, a.supplier vendorid, a.itemgroupname itemgroupid,   
+        sum(a.qty) qty,sum(a.sales) netsales, sum(a.cost) cost, sum(a.cost_it) cost_tr,
         'factsales' sourcetable
-    from factsales a
+    from factsalesnew a
     left join dimproduct b
-        on UPPER(a.companyid)=UPPER(a.companyid)
+        on UPPER(a.company)=UPPER(b.companyid)
         and a.productkey=b.productkey
-    left join dimstore c
-        on a.locationkey=c.locationkey
     left join dimexchangeratedwh d
-        on UPPER(a.companyid)=UPPER(d.companyid)
+        on UPPER(a.company)=UPPER(d.companyid)
     where year(a.[date]) = @year
         and month(a.date) = @monthno
     group by (case when month(a.date) = 8 then 'Aug' when month(a.date) = 9 then 'Sep' else '' end) , 
-        a.companyid, c.warehouseid, a.apntprimaryvendorid_it , a.ltitemgroupid_it 
+        a.company, a.warehouseid, a.supplier , a.itemgroupname 
 ), 
 
 factscrdwh_agg as (
@@ -33,10 +31,13 @@ factscrdwh_agg as (
 ),
 
 base_agg as (
-    select * from factsales_agg
+    select * from factsalesnew_agg
     UNION ALL
     select * from factscrdwh_agg
 )
 
 
 select * from base_agg
+
+-------------------------
+
