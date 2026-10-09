@@ -74,23 +74,25 @@ base_agg as (
 
 
 -- granular
-SELECT *, (qty_FI-qty_SCR) qty_var, (costusd_FI-costusd_SCR) costusd_var
-FROM (
-    select companyid,  warehouseid,  vendorid, itemgroupid,  
-         department,  subdepartment,  class,  subclass, 
-        brand,  productid,
-        sum(netqty) netqty, sum(netcost) netcost, sum(netcost_usd) netcost_usd, 
-        sum(case when tablesource = 'factinventory' then netqty else 0 end) qty_FI,
-        sum(case when tablesource = 'factinventory' then netcost_usd else 0 end) costusd_FI,
-        sum(case when tablesource = 'factscr' then netqty else 0 end) qty_SCR,
-        sum(case when tablesource = 'factscr' then netcost_usd else 0 end) costusd_SCR
-    from base_agg
-    group by companyid,  warehouseid,  vendorid, itemgroupid,  
-         department,  subdepartment,  class,  subclass, 
-        brand,  productid
-    ) t
-WHERE companyid = 'UAE'
-AND ABS((qty_FI-qty_SCR)+(costusd_FI-costusd_SCR)) > 0.99
+
+    SELECT *, (qty_FI-qty_SCR) qty_var, (costusd_FI-costusd_SCR) costusd_var
+    FROM (
+        select companyid,  warehouseid,  vendorid, itemgroupid,  
+            department,  subdepartment,  class,  subclass, 
+            brand,  productid,
+            sum(netqty) netqty, sum(netcost) netcost, sum(netcost_usd) netcost_usd, 
+            sum(case when tablesource = 'factinventory' then netqty else 0 end) qty_FI,
+            sum(case when tablesource = 'factinventory' then netcost_usd else 0 end) costusd_FI,
+            sum(case when tablesource = 'factscr' then netqty else 0 end) qty_SCR,
+            sum(case when tablesource = 'factscr' then netcost_usd else 0 end) costusd_SCR
+        from base_agg
+        group by companyid,  warehouseid,  vendorid, itemgroupid,  
+            department,  subdepartment,  class,  subclass, 
+            brand,  productid
+        ) t
+    WHERE companyid = 'UAE'
+    AND ABS((qty_FI-qty_SCR)+(costusd_FI-costusd_SCR)) > 0.99
+
 
 ;
 
