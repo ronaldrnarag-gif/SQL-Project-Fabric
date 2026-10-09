@@ -74,8 +74,8 @@ base_agg as (
 
 
 -- granular
-select *, (qty_FI-qty_SCR) qty_var, (costusd_FI-costusd_SCR) costusd_var
-from (
+SELECT *, (qty_FI-qty_SCR) qty_var, (costusd_FI-costusd_SCR) costusd_var
+FROM (
     select companyid,  warehouseid,  vendorid, itemgroupid,  
          department,  subdepartment,  class,  subclass, 
         brand,  productid,
@@ -88,10 +88,9 @@ from (
     group by companyid,  warehouseid,  vendorid, itemgroupid,  
          department,  subdepartment,  class,  subclass, 
         brand,  productid
-) t
-where companyid = 'QAT'
-and abs(qty_FI-qty_SCR) > 0
-
+    ) t
+WHERE companyid = 'UAE'
+AND ABS((qty_FI-qty_SCR)+(costusd_FI-costusd_SCR)) > 0.99
 
 ;
 
