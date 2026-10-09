@@ -25,7 +25,7 @@ declare @monthperiod VARCHAR(10) = 'Sep'
 
 factscrdwh_agg as (
     select month, dataareaid companyid, warehouse warehouseid, vendid vendorid, itemgroupid itemgroupid,
-        sum(qtysales) qty, sum(vspsales) netsales, sum(ancpsales) cost, sum(ancpsalestr) cost_tr,
+        sum(-qtysales) qty, sum(-vspsales) netsales, sum(ancpsales) cost, sum(ancpsalestr) cost_tr,
         'factscrdwh' sourcetable
     from factscrdwh
     where finyear = @finyear and [month] = @monthperiod
