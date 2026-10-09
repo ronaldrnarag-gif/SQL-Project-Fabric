@@ -2,7 +2,7 @@
 declare @finyear VARCHAR(10) = '2026-27'
 declare @monthno int = 9
 declare @monthperiod VARCHAR(10) = 'Sep'
-
+ 
 ; with factsales_agg as (
     select (case when month(a.date) = 8 then 'Aug' when month(a.date) = 9 then 'Sep' else '' end) month, 
         a.companyid, c.warehouseid, a.apntprimaryvendorid_it vendorid, a.ltitemgroupid_it itemgroupid,   
@@ -35,4 +35,4 @@ base_agg as (
 )
 
 
-select count(*) from base_agg
+select * from base_agg
