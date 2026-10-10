@@ -28,6 +28,9 @@ and department <> 'SERVICES'
 Group by finyear, month
 order by 1,2
 
+select top 10 * from dimdate
+
+
 -- check whether SCR got updated for MTD 
 select finyear [finyear-scrdwh], month, 
     FORMAT(sum(case when upper(dataareaid) = 'UAE' then ancpstkend_usd else 0 end), '#,###') UAE,
@@ -52,11 +55,9 @@ order by 1, 2
 use Lakehouse_Curated
 
 -- itemgroup mismatch between inventtrans and inventtrans_origin
-
-
 ; with mismatch_agg as (
         select * from (
-        select a.datephysical, a.inventtransorigin, a.dataareaid, a.itemid, 
+        select cast(a.datephysical as date) datephysical, a.inventtransorigin, a.dataareaid, a.itemid, 
                 a.ltitemgroupid ltitemgroupid_inventtrans, b.ltitemgroupid ltitemgroupid_inventtransorigin, a.apntprimaryvendorid,
                 sum(qty) transqty
         from inventtrans a
@@ -70,6 +71,12 @@ use Lakehouse_Curated
                         ) t
         where ltitemgroupid_inventtrans <> ltitemgroupid_inventtransorigin
         )
-select *
+select a.*, b.vendorid [vendorid-dimproduct], b.vendorgroup [vendorgroup-dimproduct]
 from mismatch_agg a
-order by datephysical desc
+left join [AzadeaWarehouse].[dbo].[dimproduct] b
+        on UPPER(a.dataareaid)=UPPER(b.companyid)
+        and a.itemid = b.productid
+order by a.datephysical desc
+
+
+
