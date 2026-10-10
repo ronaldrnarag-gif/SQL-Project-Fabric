@@ -55,6 +55,18 @@ group by a.finyear, b.fiscalmonthno , a.[month]
 order by 1, 2
 
 
+-- check whether SCR got updated for MTD 
+select a.finyear [finyear-scrdwh], b.fiscalmonthno monthno, a.month, a.dataareaid companyid, a.refrecid
+from factscrdwh a
+left join vw_dimmonthcalendar b
+        on a.finyear=b.fiscalperiod
+        and upper(a.[month])=UPPER(b.[month])
+where a.finyear = '2026-27'
+        and a.itemgroupid in ('I','N')
+        and a.deptname <> 'SERVICES'
+        and b.fiscalmonthno = month(cast(getdate()-1 as date))-1
+group by a.finyear, b.fiscalmonthno , a.month, a.dataareaid , a.refrecid
+order by 1, 2
 
 /*
 ------ NON CRITICAL CHECKS -----------------
