@@ -12,44 +12,51 @@ from factinventory
 group by sourcemovement
 
 -- sales validation
-select cast(date as date) [date of sales], format(count(*),'#,###') totalrecords
+select cast(date as date) [date of sales], DATEPART(WEEKDAY,date) weekday,
+        format(count(*),'#,###') count_records,
+        format(AVG(count(*)) over(), '#,###') count_totalavg
 from factsalesnew
 where date >= DATEADD(day,1,eomonth(DATEADD(MONTH,-1,getdate()-1)))
-group by cast(date as date) order by 1
+group by cast(date as date) ,  DATEPART(WEEKDAY,date)
+order by 1
 
 -- inventory validation 
-select finyear [finyear-factinventory], month, 
-    format(sum(total_stk_usd), '#,###') total_stk_usd, 
-    format(sum(total_prov_usd), '#,###') total_prov_usd
-from fact_inventory_historical
-where finyear = '2026-27'
-and itemgroupname in ('NORMAL PURCHASE','PURCHASE FOREIGN')
-and department <> 'SERVICES'
-Group by finyear, month
+select a.finyear [finyear-factinventory], b.fiscalmonthno monthno, a.[month], 
+    format(sum(a.total_stk_usd), '#,###') total_stk_usd, 
+    format(sum(a.total_prov_usd), '#,###') total_prov_usd,
+    format(sum(a.total_stk_usd)-lag(sum(a.total_stk_usd)) over (order by b.fiscalmonthno),'#,###') [stk_incdec],
+    format(sum(a.total_prov_usd)-lag(sum(a.total_prov_usd)) over (order by b.fiscalmonthno),'#,###') [prov_gainorloss]
+from fact_inventory_historical a
+left join vw_dimmonthcalendar b
+        on a.fiscalyearmonthkey=b.fiscalyearmonthkey
+where a.finyear = '2026-27'
+and a.itemgroupname in ('NORMAL PURCHASE','PURCHASE FOREIGN')
+and a.department <> 'SERVICES'
+Group by a.finyear, b.fiscalmonthno , a.[month]
 order by 1,2
 
-select top 10 * from dimdate
-
-
 -- check whether SCR got updated for MTD 
-select finyear [finyear-scrdwh], month, 
-    FORMAT(sum(case when upper(dataareaid) = 'UAE' then ancpstkend_usd else 0 end), '#,###') UAE,
-    FORMAT(sum(case when upper(dataareaid) = 'QAT' then ancpstkend_usd else 0 end), '#,###') QAT,
-    FORMAT(sum(case when upper(dataareaid) = 'BAH' then ancpstkend_usd else 0 end), '#,###') BAH,
-    FORMAT(sum(case when upper(dataareaid) = 'OMN' then ancpstkend_usd else 0 end), '#,###') OMN,
-    FORMAT(sum(case when upper(dataareaid) = 'KAT' then ancpstkend_usd else 0 end), '#,###') KAT,
+select a.finyear [finyear-scrdwh], b.fiscalmonthno monthno, a.month, 
+    FORMAT(sum(case when upper(a.dataareaid) = 'UAE' then ancpstkend_usd else 0 end), '#,###') UAE,
+    FORMAT(sum(case when upper(a.dataareaid) = 'QAT' then ancpstkend_usd else 0 end), '#,###') QAT,
+    FORMAT(sum(case when upper(a.dataareaid) = 'BAH' then ancpstkend_usd else 0 end), '#,###') BAH,
+    FORMAT(sum(case when upper(a.dataareaid) = 'OMN' then ancpstkend_usd else 0 end), '#,###') OMN,
+    FORMAT(sum(case when upper(a.dataareaid) = 'KAT' then ancpstkend_usd else 0 end), '#,###') KAT,
     FORMAT(sum(ancpstkend_usd), '#,###') TOTALREGION,
     format(count(*), '#,###') count_totalrecords
-from factscrdwh
-where finyear = '2026-27'
-        and itemgroupid in ('I','N')
-        and deptname <> 'SERVICES'
-group by finyear, [month]
+from factscrdwh a
+left join vw_dimmonthcalendar b
+        on a.finyear=b.fiscalperiod
+        and upper(a.[month])=UPPER(b.[month])
+where a.finyear = '2026-27'
+        and a.itemgroupid in ('I','N')
+        and a.deptname <> 'SERVICES'
+group by a.finyear, b.fiscalmonthno , a.[month]
 order by 1, 2
 
 
 
-
+/*
 ------ NON CRITICAL CHECKS -----------------
 
 use Lakehouse_Curated
@@ -77,6 +84,7 @@ left join [AzadeaWarehouse].[dbo].[dimproduct] b
         on UPPER(a.dataareaid)=UPPER(b.companyid)
         and a.itemid = b.productid
 order by a.datephysical desc
+*/
 
 
 
