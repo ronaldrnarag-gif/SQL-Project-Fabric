@@ -61,4 +61,26 @@ SET @sql = @sql + ' AND CompanyID = @company';
         AND CompanyID = 'US01'
         AND FiscalYear = '2026'
 
--- 5-   
+-- 5-   FIRST_VALUE and LAST_VALUE
+
+    -- first month sales
+    SELECT
+    FiscalMonthNo,
+    Sales_USD,
+    FIRST_VALUE(Sales_USD) OVER
+    (
+        ORDER BY FiscalMonthNo
+    ) AS FirstMonthSales
+    FROM FactSales;
+
+    --last month sales
+    SELECT
+    FiscalMonthNo,
+    Sales_USD,
+    LAST_VALUE(Sales_USD) OVER
+    (
+        ORDER BY FiscalMonthNo
+        ROWS BETWEEN UNBOUNDED PRECEDING
+           AND UNBOUNDED FOLLOWING
+    ) AS LastMonthSales
+    FROM FactSales;
