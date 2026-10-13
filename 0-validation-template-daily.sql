@@ -69,7 +69,7 @@ where a.finyear = '2026-27'
 group by a.finyear, b.fiscalmonthno , a.month, a.dataareaid , a.refrecid
 order by 1, 2
 
--- /*
+/*
 ------ NON CRITICAL CHECKS -----------------
 
 use Lakehouse_Curated
@@ -103,4 +103,3 @@ left join [AzadeaWarehouse].[dbo].[dimproduct] b
 order by a.datephysical desc
 
 */
-
