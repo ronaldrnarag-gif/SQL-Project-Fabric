@@ -13,6 +13,7 @@ group by sourcemovement
 
 -- sales validation
 select cast(date as date) [date of sales], DATEPART(WEEKDAY,date) weekday,
+        format(sum(case when [level]='L-1' then sales_usd ELSE 0 END), '#,###') sales_usd_L1,
         format(count(*),'#,###') count_records,
         format(AVG(count(*)) over(), '#,###') count_totalavg
 from factsalesnew
@@ -97,6 +98,4 @@ left join [AzadeaWarehouse].[dbo].[dimproduct] b
         and a.itemid = b.productid
 order by a.datephysical desc
 */
-
-
 
