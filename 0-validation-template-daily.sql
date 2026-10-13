@@ -69,26 +69,30 @@ where a.finyear = '2026-27'
 group by a.finyear, b.fiscalmonthno , a.month, a.dataareaid , a.refrecid
 order by 1, 2
 
-/*
+-- /*
 ------ NON CRITICAL CHECKS -----------------
 
 use Lakehouse_Curated
 
+select top 10 * from inventtransorigin
+
 -- itemgroup mismatch between inventtrans and inventtrans_origin
 ; with mismatch_agg as (
         select * from (
-        select cast(a.datephysical as date) datephysical, a.inventtransorigin, a.dataareaid, a.itemid, 
-                a.ltitemgroupid ltitemgroupid_inventtrans, b.ltitemgroupid ltitemgroupid_inventtransorigin, a.apntprimaryvendorid,
-                sum(qty) transqty
-        from inventtrans a
-        left join inventtransorigin b
-                on a.itemid=b.itemid
-                and a.dataareaid=b.dataareaid
-                and a.inventtransorigin = b.recid
-        where upper(a.dataareaid) not in ('EGP','KWT','JOR')
-        group by a.datephysical, a.inventtransorigin, a.dataareaid, a.itemid, 
-                a.ltitemgroupid , b.ltitemgroupid , a.apntprimaryvendorid
-                        ) t
+                select cast(a.datephysical as date) datephysical, a.inventtransorigin, a.dataareaid, a.itemid, 
+                        a.ltitemgroupid ltitemgroupid_inventtrans, b.ltitemgroupid ltitemgroupid_inventtransorigin, a.apntprimaryvendorid, 
+                        b.inventtransid,b.referenceid,
+                        sum(qty) transqty
+                from inventtrans a
+                left join inventtransorigin b
+                        on a.itemid=b.itemid
+                        and a.dataareaid=b.dataareaid
+                        and a.inventtransorigin = b.recid
+                where upper(a.dataareaid) not in ('EGP','KWT','JOR')
+                group by a.datephysical, a.inventtransorigin, a.dataareaid, a.itemid, 
+                        a.ltitemgroupid , b.ltitemgroupid , a.apntprimaryvendorid,
+                        b.inventtransid,b.referenceid
+                                ) t
         where ltitemgroupid_inventtrans <> ltitemgroupid_inventtransorigin
         )
 select a.*, b.vendorid [vendorid-dimproduct], b.vendorgroup [vendorgroup-dimproduct]
@@ -97,5 +101,6 @@ left join [AzadeaWarehouse].[dbo].[dimproduct] b
         on UPPER(a.dataareaid)=UPPER(b.companyid)
         and a.itemid = b.productid
 order by a.datephysical desc
+
 */
 
