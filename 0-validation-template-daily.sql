@@ -103,3 +103,6 @@ left join [AzadeaWarehouse].[dbo].[dimproduct] b
 order by a.datephysical desc
 
 */
+
+
+--------------------------
