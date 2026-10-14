@@ -70,6 +70,7 @@ group by a.finyear, b.fiscalmonthno , a.month, a.dataareaid , a.refrecid
 order by 1, 2
 
 /*
+
 ------ NON CRITICAL CHECKS -----------------
 
 use Lakehouse_Curated
