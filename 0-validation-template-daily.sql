@@ -74,14 +74,13 @@ order by 1, 2
 
 use Lakehouse_Curated
 
-select top 10 * from inventtransorigin
 
 -- itemgroup mismatch between inventtrans and inventtrans_origin
 ; with mismatch_agg as (
         select * from (
                 select cast(a.datephysical as date) datephysical, a.inventtransorigin, a.dataareaid, a.itemid, 
-                        a.ltitemgroupid ltitemgroupid_inventtrans, b.ltitemgroupid ltitemgroupid_inventtransorigin, a.apntprimaryvendorid, 
-                        b.inventtransid,b.referenceid,
+                        a.ltitemgroupid ltitemgroupid_it, b.ltitemgroupid ltitemgroupid_orig, a.apntprimaryvendorid apntprimaryvendorid_it, 
+                        b.inventtransid inventtransid_orig,b.referenceid referenceid_orig, a.recid recid_it,
                         sum(qty) transqty
                 from inventtrans a
                 left join inventtransorigin b
@@ -89,11 +88,11 @@ select top 10 * from inventtransorigin
                         and a.dataareaid=b.dataareaid
                         and a.inventtransorigin = b.recid
                 where upper(a.dataareaid) not in ('EGP','KWT','JOR')
-                group by a.datephysical, a.inventtransorigin, a.dataareaid, a.itemid, 
-                        a.ltitemgroupid , b.ltitemgroupid , a.apntprimaryvendorid,
-                        b.inventtransid,b.referenceid
+                group by cast(a.datephysical as date) , a.inventtransorigin, a.dataareaid, a.itemid, 
+                        a.ltitemgroupid , b.ltitemgroupid , a.apntprimaryvendorid , 
+                        b.inventtransid ,b.referenceid , a.recid 
                                 ) t
-        where ltitemgroupid_inventtrans <> ltitemgroupid_inventtransorigin
+        where ltitemgroupid_it <> ltitemgroupid_orig
         )
 select a.*, b.vendorid [vendorid-dimproduct], b.vendorgroup [vendorgroup-dimproduct]
 from mismatch_agg a
