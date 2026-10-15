@@ -1,7 +1,7 @@
 
 
-declare @finyear VARCHAR(10) = '2025-26'
-declare @monthperiod VARCHAR(10) = 'Feb'
+declare @finyear VARCHAR(10) = '2026-27'
+-- declare @monthperiod VARCHAR(10) = 'Sep'
  
 ; with factsalesnew_agg as (
     select a.finyear, a.month, a.company companyid, a.warehouseid, a.storetype, a.supplier vendorid, a.itemgroupname itemgroupid, b.itemmodelgroup, b.producttype, 
@@ -17,7 +17,8 @@ declare @monthperiod VARCHAR(10) = 'Feb'
     where 1=1
         and a.warehouseid <> '496'
         and a.finyear = @finyear 
-        and a.month = @monthperiod
+        -- and a.month = @monthperiod
+        and a.month <> 'Oct'
     group by a.finyear, a.month, a.company , a.warehouseid, a.storetype, a.supplier , a.itemgroupname , b.itemmodelgroup, b.producttype, 
         b.hir1 , b.hir2 , b.hir3 , b.hir4 , b.ltbrand , a.productkey, a.productid
 ),
@@ -36,7 +37,8 @@ factscrdwh_agg as (
         and a.warehouse=c.warehouseid
     where 1=1 
         AND a.finyear = @finyear 
-        and [month] = @monthperiod
+        -- and a.[month] = @monthperiod
+        and a.month <> 'Oct'
     group by a.finyear, a.month, a.dataareaid , a.warehouse , c.storetype,a.vendid , a.itemgroupid , b.itemmodelgroup, b.producttype,
          b.hir1 , b.hir2 , b.hir3 , b.hir4 , b.ltbrand , a.productkey, a.itemid 
 ),
