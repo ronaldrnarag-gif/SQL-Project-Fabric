@@ -1,7 +1,7 @@
 
 
-declare @finyear VARCHAR(10) = '2026-27'
--- declare @monthperiod VARCHAR(10) = 'Sep'
+declare @finyear VARCHAR(10) = '2025-26'
+-- declare @monthperiod VARCHAR(10) = 'Aug'
  
 ; with factsalesnew_agg as (
     select a.finyear, a.month, a.company companyid, a.warehouseid, a.storetype, a.supplier vendorid, a.itemgroupname itemgroupid, b.itemmodelgroup, b.producttype, 
@@ -18,7 +18,6 @@ declare @finyear VARCHAR(10) = '2026-27'
         and a.warehouseid <> '496'
         and a.finyear = @finyear 
         -- and a.month = @monthperiod
-        and a.month <> 'Oct'
     group by a.finyear, a.month, a.company , a.warehouseid, a.storetype, a.supplier , a.itemgroupname , b.itemmodelgroup, b.producttype, 
         b.hir1 , b.hir2 , b.hir3 , b.hir4 , b.ltbrand , a.productkey, a.productid
 ),
@@ -38,7 +37,6 @@ factscrdwh_agg as (
     where 1=1 
         AND a.finyear = @finyear 
         -- and a.[month] = @monthperiod
-        and a.month <> 'Oct'
     group by a.finyear, a.month, a.dataareaid , a.warehouse , c.storetype,a.vendid , a.itemgroupid , b.itemmodelgroup, b.producttype,
          b.hir1 , b.hir2 , b.hir3 , b.hir4 , b.ltbrand , a.productkey, a.itemid 
 ),
@@ -73,7 +71,7 @@ from (
 
 ----------
 
--- -- Granular level validation ----------------------------
+-- Granular level validation ----------------------------
 
 -- select *, (qty_FS-qty_SCR) qty_var, (salesusd_FS-salesusd_SCR) sales_var, (costusd_FS-costusd_SCR) cost_var, (costTRusd_FS-costTRusd_SCR) costtr_var
 -- FROM (
