@@ -1,6 +1,6 @@
 
 
-declare @finyear VARCHAR(10) = '2025-26'
+declare @finyear VARCHAR(10) = '2024-25'
 -- declare @monthperiod VARCHAR(10) = 'Aug'
  
 ; with factsalesnew_agg as (
@@ -103,3 +103,5 @@ from (
     -- FROM factscrdwh_agg
     -- group by finyear, month, companyid, warehouseid, storetype, vendorid, itemgroupid, itemmodelgroup, producttype, 
     --      department,  subdepartment,  class, subclass,tablesource
+
+
