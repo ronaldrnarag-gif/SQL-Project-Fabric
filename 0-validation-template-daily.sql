@@ -75,8 +75,6 @@ order by 1, 2
 
 use Lakehouse_Curated
 
-select top 10 * from inventtrans
-
 -- itemgroup mismatch between inventtrans and inventtrans_origin
 ; with mismatch_agg as (
         select * from (
