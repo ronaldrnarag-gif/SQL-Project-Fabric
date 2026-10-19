@@ -92,7 +92,7 @@ use Lakehouse_Curated
                         a.ltitemgroupid , b.ltitemgroupid , a.apntprimaryvendorid , 
                         b.inventtransid ,b.referenceid , a.recid 
                                 ) t
-        where ltitemgroupid_it <> ltitemgroupid_orig
+        where ltitemgroupid_it <> ltitemgroupid_orig  OR ltitemgroupid_it is NULL
         )
 select a.*, b.vendorid [vendorid-dimproduct], b.vendorgroup [vendorgroup-dimproduct]
 from mismatch_agg a
@@ -105,3 +105,4 @@ order by a.datephysical desc
 
 
 --------------------------
+
