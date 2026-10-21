@@ -1,12 +1,12 @@
 
 
-declare @finyear VARCHAR(10) = '2024-25'
--- declare @monthperiod VARCHAR(10) = 'Aug'
+declare @finyear VARCHAR(10) = '2026-27'
+declare @monthperiod VARCHAR(10) = 'Sep'
  
 ; with factsalesnew_agg as (
     select a.finyear, a.month, a.company companyid, a.warehouseid, a.storetype, a.supplier vendorid, a.itemgroupname itemgroupid, b.itemmodelgroup, b.producttype, 
         b.hir1 department, b.hir2 subdepartment, b.hir3 class, b.hir4 subclass, b.ltbrand brand, a.productkey, a.productid, 
-        sum(a.qty) qty,sum(a.sales_usd) netsales, sum(a.cost_usd) cost, sum(a.cost_it_usd) cost_tr,
+        sum(a.qty) qty,sum(a.sales_usd) netsales, sum(a.cost_usd) cost, sum(a.cost_usd) cost_tr,
         'factsalesnew' tablesource
     from factsalesnew a
     left join dimproduct b
@@ -17,7 +17,7 @@ declare @finyear VARCHAR(10) = '2024-25'
     where 1=1
         and a.warehouseid <> '496'
         and a.finyear = @finyear 
-        -- and a.month = @monthperiod
+        and a.month = @monthperiod
     group by a.finyear, a.month, a.company , a.warehouseid, a.storetype, a.supplier , a.itemgroupname , b.itemmodelgroup, b.producttype, 
         b.hir1 , b.hir2 , b.hir3 , b.hir4 , b.ltbrand , a.productkey, a.productid
 ),
@@ -36,7 +36,8 @@ factscrdwh_agg as (
         and a.warehouse=c.warehouseid
     where 1=1 
         AND a.finyear = @finyear 
-        -- and a.[month] = @monthperiod
+        and a.[month] = @monthperiod
+        and cast(a.sinkcreatedon as date) = '2026-10-19'
     group by a.finyear, a.month, a.dataareaid , a.warehouse , c.storetype,a.vendid , a.itemgroupid , b.itemmodelgroup, b.producttype,
          b.hir1 , b.hir2 , b.hir3 , b.hir4 , b.ltbrand , a.productkey, a.itemid 
 ),
@@ -67,7 +68,7 @@ from (
         department, subdepartment, class, subclass
     ) t
 
-
+;
 
 ----------
 

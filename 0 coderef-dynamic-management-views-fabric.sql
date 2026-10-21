@@ -5,6 +5,8 @@
 --	gives no of active queries and which queries are running for extended time.
 */
 
+USE AzadeaWarehouse
+
 select * from sys.dm_exec_connections
 
 select * from sys.dm_exec_sessions where nt_user_name = 'ronald.narag'
@@ -19,5 +21,5 @@ select * from sys.objects order by type_desc
 
 select * from INFORMATION_SCHEMA.TABLES ORDER BY TABLE_NAME
 
-USE AzadeaWarehouse
+
 
