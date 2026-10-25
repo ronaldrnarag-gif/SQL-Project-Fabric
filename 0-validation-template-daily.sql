@@ -11,8 +11,8 @@ select sourcemovement, cast(max(date) as date) latestupdate
 from factinventory
 group by sourcemovement
 
--- sales validation
-select cast(date as date) [date of sales], DATEPART(WEEKDAY,date) weekday,
+-- sales table validation
+select cast(date as date) [date FactSalesNew], DATEPART(WEEKDAY,date) weekday,
         format(sum(case when [level]='L-1' then sales_usd ELSE 0 END), '#,###') sales_usd_L1,
         format(count(*),'#,###') count_records,
         format(AVG(count(*)) over(), '#,###') count_totalavg
@@ -20,6 +20,37 @@ from factsalesnew
 where date >= DATEADD(day,1,eomonth(DATEADD(MONTH,-1,getdate()-1)))
 group by cast(date as date) ,  DATEPART(WEEKDAY,date)
 order by 1
+
+-- Sales Table OTHERLS validation
+select cast(date as date) [date FactSalesOtherLS], DATEPART(WEEKDAY,date) weekday,
+        -- format(sum(case when [level]='L-1' then netsales_usd ELSE 0 END), '#,###') sales_usd_L1,
+        format(count(*),'#,###') count_records,
+        format(AVG(count(*)) over(), '#,###') count_totalavg
+from factsalesotherls
+where date >= DATEADD(day,1,eomonth(DATEADD(MONTH,-1,getdate()-1)))
+group by cast(date as date) ,  DATEPART(WEEKDAY,date)
+order by 1
+
+-- transactions Table validation
+select cast(date as date) [date TransCountNew], DATEPART(WEEKDAY,date) weekday,
+        format(sum(case when [level]='L-1' then netsales_usd ELSE 0 END), '#,###') sales_usd_L1,
+        format(count(*),'#,###') count_records,
+        format(AVG(count(*)) over(), '#,###') count_totalavg
+from factsalestransactioncountnew
+where date >= DATEADD(day,1,eomonth(DATEADD(MONTH,-1,getdate()-1)))
+group by cast(date as date) ,  DATEPART(WEEKDAY,date)
+order by 1
+
+-- Transactions Table check
+Select cast(min(date) as date) TransMinDate, 
+        cast(max(date) as date) TransMaxDate
+from [AzadeaWarehouse].[dbo].[factsalestransactioncountnew]
+
+-- Traffic check
+select min([date]) TrafficMinDate, 
+        max([date]) TrafficMaxDate
+from [AzadeaWarehouse].[dbo].[vw_facttraffic_totaldiv]
+
 
 -- inventory validation 
 select a.finyear [finyear-factinventory], b.fiscalmonthno monthno, a.[month], 
@@ -69,6 +100,8 @@ where a.finyear = '2026-27'
 group by a.finyear, b.fiscalmonthno , a.month, a.dataareaid , a.refrecid
 order by 1, 2
 
+
+
 /*
 
 ------ NON CRITICAL CHECKS -----------------
@@ -103,6 +136,4 @@ order by a.datephysical desc
 
 */
 
-
---------------------------
-
+-------------------------------
