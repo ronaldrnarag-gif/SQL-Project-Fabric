@@ -23,7 +23,6 @@ order by 1
 
 -- Sales Table OTHERLS validation
 select cast(date as date) [date FactSalesOtherLS], DATEPART(WEEKDAY,date) weekday,
-        -- format(sum(case when [level]='L-1' then netsales_usd ELSE 0 END), '#,###') sales_usd_L1,
         format(count(*),'#,###') count_records,
         format(AVG(count(*)) over(), '#,###') count_totalavg
 from factsalesotherls
@@ -42,12 +41,12 @@ group by cast(date as date) ,  DATEPART(WEEKDAY,date)
 order by 1
 
 -- Transactions Table check
-Select cast(min(date) as date) TransMinDate, 
+Select cast(min(date) as date) 'TransTable MinDate', 
         cast(max(date) as date) TransMaxDate
 from [AzadeaWarehouse].[dbo].[factsalestransactioncountnew]
 
 -- Traffic check
-select min([date]) TrafficMinDate, 
+select min([date]) 'TrafficTable MinDate', 
         max([date]) TrafficMaxDate
 from [AzadeaWarehouse].[dbo].[vw_facttraffic_totaldiv]
 
@@ -137,3 +136,8 @@ order by a.datephysical desc
 */
 
 -------------------------------
+
+
+-- use Lakehouse_Curated
+
+-- select distinct recid, dataareaid from ltscrheadermtd where dataareaid is not null
