@@ -137,6 +137,9 @@ order by a.datephysical desc
 
 -------------------------------
 
+
+
+-- fact_inventory - fix on demo/defective provision and aging.
 -- inventory validation
 -- salman
 -- fifo validation
