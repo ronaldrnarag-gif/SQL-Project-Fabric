@@ -137,7 +137,9 @@ order by a.datephysical desc
 
 -------------------------------
 
-
--- use Lakehouse_Curated
-
--- select distinct recid, dataareaid from ltscrheadermtd where dataareaid is not null
+-- inventory validation
+-- salman
+-- fifo validation
+-- forecast check
+-- fabric admin message
+-- level to incorporate with dimproduct
