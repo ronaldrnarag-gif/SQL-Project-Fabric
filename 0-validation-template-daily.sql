@@ -137,7 +137,7 @@ order by a.datephysical desc
 
 -------------------------------
 
-
+-- add dept2 and popgrade description in dimproduct
 -- ADD stype in DSR
 -- dax budget issue on DSR 
 -- fact_inventory - fix on demo/defective provision and aging.
