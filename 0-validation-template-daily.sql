@@ -138,7 +138,8 @@ order by a.datephysical desc
 -------------------------------
 
 
--- dax issue on DSR 
+-- ADD stype in DSR
+-- dax budget issue on DSR 
 -- fact_inventory - fix on demo/defective provision and aging.
 -- inventory validation
 -- salman
