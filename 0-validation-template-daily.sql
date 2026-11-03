@@ -137,6 +137,7 @@ order by a.datephysical desc
 
 -------------------------------
 
+
 -- add dept2 and popgrade description in dimproduct
 -- ADD stype in DSR
 -- dax budget issue on DSR 
@@ -148,3 +149,6 @@ order by a.datephysical desc
 -- fabric admin message
 -- level to incorporate with dimproduct
 -- dataflows gen 2 practice, include other ingestion options
+
+-- FIFO
+-- 
