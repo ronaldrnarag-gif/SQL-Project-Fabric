@@ -149,6 +149,8 @@ order by a.datephysical desc
 -- fabric admin message
 -- level to incorporate with dimproduct
 -- dataflows gen 2 practice, include other ingestion options
+-- weekly update to Aymen
+
 
 -- FIFO
 -- 

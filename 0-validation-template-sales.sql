@@ -1,7 +1,7 @@
 
 
 declare @finyear VARCHAR(10) = '2026-27'
-declare @monthperiod VARCHAR(10) = 'Sep'
+declare @monthperiod VARCHAR(10) = 'Oct'
  
 ; with factsalesnew_agg as (
     select a.finyear, a.month, a.company companyid, a.warehouseid, a.storetype, a.supplier vendorid, a.itemgroupname itemgroupid, b.itemmodelgroup, b.producttype, 
@@ -37,7 +37,7 @@ factscrdwh_agg as (
     where 1=1 
         AND a.finyear = @finyear 
         and a.[month] = @monthperiod
-        and cast(a.sinkcreatedon as date) = '2026-10-19'
+        -- and cast(a.sinkcreatedon as date) = '2026-10-19'
     group by a.finyear, a.month, a.dataareaid , a.warehouse , c.storetype,a.vendid , a.itemgroupid , b.itemmodelgroup, b.producttype,
          b.hir1 , b.hir2 , b.hir3 , b.hir4 , b.ltbrand , a.productkey, a.itemid 
 ),
@@ -47,6 +47,7 @@ base_agg as (
     UNION ALL
     select * from factscrdwh_agg
 )
+
 
 ---- High level validation ----------------------------
 
@@ -64,6 +65,7 @@ from (
         sum(case when tablesource = 'factscrdwh' then cost else 0 end)          costusd_SCR,
         sum(case when tablesource = 'factscrdwh' then cost_tr else 0 end)       costTRusd_SCR
     from base_agg
+    where 1=1
     group by finyear, month, companyid, warehouseid, storetype,vendorid, itemgroupid, itemmodelgroup, producttype,
         department, subdepartment, class, subclass
     ) t
