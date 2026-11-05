@@ -1,8 +1,4 @@
 
-
-
-
-
 use Lakehouse_Presentation
 
 select * from sys.tables order by name
