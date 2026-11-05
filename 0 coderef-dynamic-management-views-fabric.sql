@@ -22,4 +22,11 @@ select * from sys.objects order by type_desc
 select * from INFORMATION_SCHEMA.TABLES ORDER BY TABLE_NAME
 
 
+SELECT * FROM sys.database_principals ORDER BY name;
 
+
+SELECT *
+FROM queryinsights.long_running_queries;
+
+
+vw_inventorylatest_dtl
