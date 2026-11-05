@@ -103,14 +103,13 @@ from (
 
 
 
-sele
 
 
 
 
 
-
-
+use AzadeaWarehouse
+select * from dimstore
 
 
 
