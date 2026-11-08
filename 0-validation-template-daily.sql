@@ -21,21 +21,21 @@ where date >= DATEADD(day,1,eomonth(DATEADD(MONTH,-1,getdate()-1)))
 group by cast(date as date) ,  DATEPART(WEEKDAY,date)
 order by 1
 
--- Sales Table OTHERLS validation
-select cast(date as date) [date FactSalesOtherLS], DATEPART(WEEKDAY,date) weekday,
-        format(count(*),'#,###') count_records,
-        format(AVG(count(*)) over(), '#,###') count_totalavg
-from factsalesotherls
-where date >= DATEADD(day,1,eomonth(DATEADD(MONTH,-1,getdate()-1)))
-group by cast(date as date) ,  DATEPART(WEEKDAY,date)
-order by 1
-
 -- transactions Table validation
 select cast(date as date) [date TransCountNew], DATEPART(WEEKDAY,date) weekday,
         format(sum(case when [level]='L-1' then netsales_usd ELSE 0 END), '#,###') sales_usd_L1,
         format(count(*),'#,###') count_records,
         format(AVG(count(*)) over(), '#,###') count_totalavg
 from factsalestransactioncountnew
+where date >= DATEADD(day,1,eomonth(DATEADD(MONTH,-1,getdate()-1)))
+group by cast(date as date) ,  DATEPART(WEEKDAY,date)
+order by 1
+
+-- Sales Table OTHERLS validation
+select cast(date as date) [date FactSalesOtherLS], DATEPART(WEEKDAY,date) weekday,
+        format(count(*),'#,###') count_records,
+        format(AVG(count(*)) over(), '#,###') count_totalavg
+from factsalesotherls
 where date >= DATEADD(day,1,eomonth(DATEADD(MONTH,-1,getdate()-1)))
 group by cast(date as date) ,  DATEPART(WEEKDAY,date)
 order by 1
