@@ -1,6 +1,6 @@
 
 
-CREATE VIEW vw_fnl_sop_base_data AS
+ALTER VIEW vw_fnl_sop_base_data AS
 
 /*
 
@@ -59,6 +59,18 @@ inventoryhistory_agg as (
 
 saleshistory_agg as (
     SELECT a.company, a.productkey,
+        sum(case when cast(b.fiscalmonthposition as int) = -24 then a.qty else 0 end) qtysold_24m_ago,
+        sum(case when cast(b.fiscalmonthposition as int) = -23 then a.qty else 0 end) qtysold_23m_ago,
+        sum(case when cast(b.fiscalmonthposition as int) = -22 then a.qty else 0 end) qtysold_22m_ago,
+        sum(case when cast(b.fiscalmonthposition as int) = -21 then a.qty else 0 end) qtysold_21m_ago,
+        sum(case when cast(b.fiscalmonthposition as int) = -20 then a.qty else 0 end) qtysold_20m_ago,
+        sum(case when cast(b.fiscalmonthposition as int) = -19 then a.qty else 0 end) qtysold_19m_ago,
+        sum(case when cast(b.fiscalmonthposition as int) = -18 then a.qty else 0 end) qtysold_18m_ago,
+        sum(case when cast(b.fiscalmonthposition as int) = -17 then a.qty else 0 end) qtysold_17m_ago,
+        sum(case when cast(b.fiscalmonthposition as int) = -16 then a.qty else 0 end) qtysold_16m_ago,
+        sum(case when cast(b.fiscalmonthposition as int) = -15 then a.qty else 0 end) qtysold_15m_ago,
+        sum(case when cast(b.fiscalmonthposition as int) = -14 then a.qty else 0 end) qtysold_14m_ago,
+        sum(case when cast(b.fiscalmonthposition as int) = -13 then a.qty else 0 end) qtysold_13m_ago,
         sum(case when cast(b.fiscalmonthposition as int) = -12 then a.qty else 0 end) qtysold_12m_ago,
         sum(case when cast(b.fiscalmonthposition as int) = -11 then a.qty else 0 end) qtysold_11m_ago,
         sum(case when cast(b.fiscalmonthposition as int) = -10 then a.qty else 0 end) qtysold_10m_ago,
@@ -86,6 +98,9 @@ SELECT *
 FROM (
     SELECT a.*,
         sum(b.qtyoh_6m_ago) qtyoh_6m_ago, sum(b.qtyoh_5m_ago) qtyoh_5m_ago, sum(b.qtyoh_4m_ago) qtyoh_4m_ago, sum(b.qtyoh_3m_ago) qtyoh_3m_ago, sum(b.qtyoh_2m_ago) qtyoh_2m_ago, sum(b.qtyoh_1m_ago) qtyoh_1m_ago, sum(b.qtyoh_0m_ago) qtyoh_0m_ago,
+        sum(c.qtysold_24m_ago) qtysold_24m_ago, sum(c.qtysold_23m_ago) qtysold_23m_ago, sum(c.qtysold_22m_ago) qtysold_22m_ago, sum(c.qtysold_21m_ago) qtysold_21m_ago, sum(c.qtysold_20m_ago) qtysold_20m_ago, 
+            sum(c.qtysold_19m_ago) qtysold_19m_ago, sum(c.qtysold_18m_ago) qtysold_18m_ago, sum(c.qtysold_17m_ago) qtysold_17m_ago, sum(c.qtysold_16m_ago) qtysold_16m_ago, sum(c.qtysold_15m_ago) qtysold_15m_ago, 
+            sum(c.qtysold_14m_ago) qtysold_14m_ago, sum(c.qtysold_13m_ago) qtysold_13m_ago, 
         sum(c.qtysold_12m_ago) qtysold_12m_ago, sum(c.qtysold_11m_ago) qtysold_11m_ago, sum(c.qtysold_10m_ago) qtysold_10m_ago, sum(c.qtysold_9m_ago) qtysold_9m_ago, sum(c.qtysold_8m_ago) qtysold_8m_ago, 
             sum(c.qtysold_7m_ago) qtysold_7m_ago, sum(c.qtysold_6m_ago) qtysold_6m_ago, sum(c.qtysold_5m_ago) qtysold_5m_ago, sum(c.qtysold_4m_ago) qtysold_4m_ago, sum(c.qtysold_3m_ago) qtysold_3m_ago, 
             sum(c.qtysold_2m_ago) qtysold_2m_ago, sum(c.qtysold_1m_ago) qtysold_1m_ago,  sum(c.qtysold_0m_ago) qtysold_0m_ago
@@ -104,3 +119,4 @@ FROM (
 
 
 ;
+
