@@ -5,8 +5,9 @@ select * from sys.tables order by name
 
 select top 10 * from factfifoinventory
 
-
-select count(*) from factfifoinventory
+select  * from factfifoinventory
+where [group] = 2
+and companyid = 'BAH'
 
 use AzadeaWarehouse
 
@@ -47,3 +48,10 @@ from factsales_brand_forecast a
 left join [AzadeaWarehouse].[dbo].[dimstore] b
     on a.warehouseid=b.warehouseid
 group by a.date,  b.companyid
+
+
+use AzadeaWarehouse
+
+select * from dimstore order by warehouseid
+
+
