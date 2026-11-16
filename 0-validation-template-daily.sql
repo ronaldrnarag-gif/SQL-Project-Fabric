@@ -154,3 +154,7 @@ order by a.datephysical desc
 
 -- FIFO
 -- 
+
+
+
+-- add script for Margin % validation too
